@@ -1,0 +1,41 @@
+{
+  "name": "react-ansi-animation",
+  "version": "0.0.1",
+  "description": "React component for displaying ANSI animation",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha.js -- test/*.test.js",
+    "test:debug": "./node_modules/mocha/bin/mocha.js --no-timeouts --inspect-brk -- test/*.test.js",
+    "test:watch": "./node_modules/mocha/bin/mocha.js --parallel --watch -- test/*.test.js",
+    "coverage": "./node_modules/c8/bin/c8.js ./node_modules/mocha/bin/mocha.js --parallel -- test/*.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chung-leong/react-ansi-animation.git"
+  },
+  "keywords": [
+    "React",
+    "ANSI"
+  ],
+  "files": [
+    "src/",
+    "index.js"
+  ],
+  "author": "Chung Leong",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/chung-leong/react-ansi-animation/issues"
+  },
+  "homepage": "https://github.com/chung-leong/react-ansi-animation#readme",
+  "dependencies": {
+    "react-seq": "^0.9.0"
+  },
+  "devDependencies": {
+    "c8": "^7.12.0",
+    "chai": "^4.3.7",
+    "mocha": "^10.2.0",
+    "react": "^18.2.0",
+    "react-test-renderer": "^18.2.0"
+  }
+}
