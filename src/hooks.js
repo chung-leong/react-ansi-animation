@@ -1,6 +1,6 @@
 import { useSequentialState, delay } from 'react-seq';
 
-export function useANSI(dataSource, options) {
+export function useAnsi(dataSource, options) {
   const {
     modemSpeed = 56000,
     frameDuration = 100,
@@ -72,7 +72,7 @@ export function useANSI(dataSource, options) {
         cursorY += count;
       } else if (cmd === 'C') {
         const count = parseOne(params, 1);
-        this.cursorX += count;
+        cursorX += count;
         if (cursorX >= maxWidth) {
           cursorX = maxWidth - 1;
         }
@@ -152,7 +152,7 @@ export function useANSI(dataSource, options) {
           const target = cursorY * width + cursorX;
           const source = target + count;
           const last = (cursorY + 1) * width;
-          this.buffer.copyWithin(target, source, last);
+          buffer.copyWithin(target, source, last);
           const start = source;
           const end = last;
           buffer.fill(bgColor << 8, start, end);;
@@ -168,7 +168,7 @@ export function useANSI(dataSource, options) {
             fgBright = false;
             bgBright = false;
             fgColorBase = 7;
-            fgColorBase = 0;
+            bgColorBase = 0;
           } else if (m === 1) {
             fgBright = true;
           } else if (m === 2 || m === 22) {
@@ -204,21 +204,21 @@ export function useANSI(dataSource, options) {
     let blinked = false, blinkFramesRemaining = blinkFrameCount;
     let screen;
     // obtain data and create a Uint8Array view
-    let data, awaitingData, initialized;
+    let data, initialized;
     if (typeof(dataSource.then) === 'function') {
       // initial with blank screen at minimum dimensions
       screen = { 
         width: minWidth, 
         height: minHeight,
         blinked: false, 
-        lines: Array(minHeight).fill({ text: ' '.repeat(minWidth), fgColor: 7, bgColor: 0, blink: false }),
+        lines: Array(minHeight).fill([ { text: ' '.repeat(minWidth), fgColor: 7, bgColor: 0, blink: false } ]),
         willBlink: false,
       };
       initial(screen);
-      awaitingData = initialized = true;
+      initialized = true;
       data = await dataSource;
     } else {
-      awaitingData = initialized = false;
+      initialized = false;
       data = dataSource;
     }
     const chars = new Uint8Array(data);
@@ -237,6 +237,12 @@ export function useANSI(dataSource, options) {
         // create buffer
         buffer = new Uint16Array(width * height);
       }
+      // reset state variables
+      cursorX = cursorY = savedCursorX = savedCursorY = 0;
+      bgColor = bgColorBase = 0;
+      fgColor = fgColorBase = 7;
+      bgBright = fgBright = false;
+      let escapeSeq = null;
       // process data in a single chunk on pass 1 and multiple chunks on pass 2 
       // (unless modemSpeed is set to Infinity)
       const animationSpeed = (pass === 1) ? Infinity : modemSpeed / 10 / 1000;
@@ -246,12 +252,6 @@ export function useANSI(dataSource, options) {
           // wait for previous frame to end
           await delay(frameDuration, { signal });
         }
-        // reset state variables
-        cursorX = cursorY = savedCursorX = savedCursorY = 0;
-        bgColor = bgColorBase = 0;
-        fgColor = fgColorBase = 7;
-        bgBright = fgBright = false;
-        let escapeSeq = null;
         for (const c of chars.subarray(i, i + chunkLength)) {
           if (escapeSeq) {
             if (escapeSeq.length === 1) {
@@ -369,7 +369,7 @@ export function useANSI(dataSource, options) {
         await delay(blinkDuration, { signal });
       }
     }
-  }, [ modemSpeed, frameDuration, blinkDuration, blinking, minWidth, minHeight, maxWidth, maxHeight ]);
+  }, [ dataSource, modemSpeed, frameDuration, blinkDuration, blinking, minWidth, minHeight, maxWidth, maxHeight ]);
 }
 
 const cp437Chars = [
