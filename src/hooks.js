@@ -71,6 +71,9 @@ export function useAnsi(dataSource, options) {
       } else if (cmd === 'B') {
         const count = parseOne(params, 1);
         cursorY += count;
+        if (cursorY >= maxHeight) {
+          cursorY = maxHeight - 1;
+        }
       } else if (cmd === 'C') {
         const count = parseOne(params, 1);
         cursorX += count;
@@ -254,6 +257,8 @@ export function useAnsi(dataSource, options) {
         height = Math.max(minHeight, maxCursorY + 1);
         // create buffer
         buffer = new Uint16Array(width * height);
+        // fill buffer with default text attribute
+        buffer.fill(7 << 12 | 0 << 8);
       }
       // reset state variables
       cursorX = cursorY = savedCursorX = savedCursorY = 0;

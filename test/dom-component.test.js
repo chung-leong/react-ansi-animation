@@ -44,7 +44,7 @@ describe('#AnsiText', function() {
       expect(segment.props.style).to.have.property('color', '#aaaaaa');
       expect(segment.props.style).to.have.property('backgroundColor', '#000000');
       const text = segment.children[0];
-      expect(text).to.equal('This is a test');
+      expect(text).to.match(/^This is a test\s+/);
     });
   })
   it('should accept a buffer as srcObject', async function() {
@@ -132,7 +132,7 @@ describe('#AnsiText', function() {
         expect(segment.props.style).to.have.property('color', '#aaaaaa');
         expect(segment.props.style).to.have.property('backgroundColor', '#000000');
         const text = segment.children[0];
-        expect(text).to.equal('HTTP 404 - Not Found');
+        expect(text).to.match(/^HTTP 404 \- Not Found\s+$/);
       } finally {
         delete global.fetch;
       }
