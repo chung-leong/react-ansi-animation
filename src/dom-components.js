@@ -27,19 +27,14 @@ function getDataSource(src, srcObject) {
   }
   if (src) {
     return (async () => {
-      try {
-        const res = await fetch(src);
-        if (res.status !== 200) {
-          throw new Error(`${res.status} - ${res.statusText}`);
-        }
-        return res.arrayBuffer();
-      } catch (err) {
-        console.log(err.message);
-        return new Blob([ err.message ]);
+      const res = await fetch(src);
+      if (res.status !== 200) {
+        throw new Error(`HTTP ${res.status} - ${res.statusText}`);
       }
+      return res.arrayBuffer();
     })();
   } else {
-    return new Blob();
+    return (new Uint8Array(0)).buffer;
   }
 }
 

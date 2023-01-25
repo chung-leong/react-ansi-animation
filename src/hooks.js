@@ -10,7 +10,8 @@ export function useAnsi(dataSource, options) {
     minHeight = 24,
     maxWidth = 80,
     maxHeight = 100,
-    onBeep = null,
+    onBeep,
+    onError,
   } = options;
   return useSequentialState(async function*({ initial, signal }) {
     let width, height;
@@ -198,7 +199,17 @@ export function useAnsi(dataSource, options) {
         cursorX = savedCursorX;
         cursorY = savedCursorY;
       }
-    }  
+    }
+
+    function createEmpty() {
+      return { 
+        width: minWidth, 
+        height: minHeight,
+        blinked: false, 
+        lines: Array(minHeight).fill([ { text: ' '.repeat(minWidth), fgColor: 7, bgColor: 0, blink: false } ]),
+        willBlink: false,
+      };
+    }
 
     const blinkFrameCount = Math.ceil(blinkDuration / frameDuration);
     let blinked = false, blinkFramesRemaining = blinkFrameCount;
@@ -207,16 +218,23 @@ export function useAnsi(dataSource, options) {
     let data, initialized;
     if (typeof(dataSource.then) === 'function') {
       // initial with blank screen at minimum dimensions
-      screen = { 
-        width: minWidth, 
-        height: minHeight,
-        blinked: false, 
-        lines: Array(minHeight).fill([ { text: ' '.repeat(minWidth), fgColor: 7, bgColor: 0, blink: false } ]),
-        willBlink: false,
-      };
+      screen = createEmpty();
       initial(screen);
       initialized = true;
-      data = await dataSource;
+      try {
+        data = await dataSource;
+      } catch (err) {
+        // use text from error
+        const msg = err.message;
+        const array = new Uint8Array(msg.length);
+        const oob = '?'.charCodeAt(0);
+        for (let i = 0; i < msg.length; i++) {
+          const cc = msg.charCodeAt(i);
+          array[i] = (cc < 128) ? cc : oob;
+        }
+        data = array.buffer;
+        onError?.(err);
+      }
     } else {
       initialized = false;
       data = dataSource;
@@ -350,13 +368,19 @@ export function useAnsi(dataSource, options) {
             initial(screen);
             initialized = true;
           }
-          blinkFramesRemaining--;
-          if (blinkFramesRemaining === 0) {
-            blinked = !blinked;
-            blinkFramesRemaining = blinkFrameCount;
+          if (blinking) {
+            blinkFramesRemaining--;
+            if (blinkFramesRemaining === 0) {
+              blinked = !blinked;
+              blinkFramesRemaining = blinkFrameCount;
+            }
           }
         }
       }
+    }
+    // handle data source
+    if (!initialized) {
+      initial(screen = createEmpty());
     }
     // go into an endless loop if there's blinking text
     // unless blinking is just truthy
@@ -368,7 +392,7 @@ export function useAnsi(dataSource, options) {
         yield { ...screen, blinked };
         await delay(blinkDuration, { signal });
       }
-    }
+    }    
   }, [ dataSource, modemSpeed, frameDuration, blinkDuration, blinking, minWidth, minHeight, maxWidth, maxHeight ]);
 }
 

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { readFile } from 'fs/promises';
+import { readFile, stat } from 'fs/promises';
 import { createElement } from 'react';
 import { delay } from 'react-seq';
 import { withTestRenderer } from './test-renderer.js';
@@ -156,6 +156,83 @@ describe('#useANSI()', function() {
       expect(outputs[0]).to.have.property('willBlink', true);
       await Promise.race([ delay(75), steps[1] ]);
       expect(outputs).to.have.lengthOf(1);
+    });
+  })
+  it('should be able to parse a file correctly at a slower speed', async function() {
+    await withTestRenderer(async ({ render, unmount, toJSON }) => {
+      const steps = createSteps();
+      const outputs = [];
+      const path = resolve('./ansi/LDA-GARFIELD.ANS');
+      const dataSource = await readFile(path);
+      const frameDuration = 100;
+      const { size } = await stat(path);
+      let count = 0;
+      function Test({ modemSpeed }) {
+        const screen = useAnsi(dataSource, { modemSpeed, frameDuration });
+        outputs.push(screen);
+        steps[count++].done();
+        return 'Hello';
+      }
+      const el1 = createElement(Test, { modemSpeed: Infinity });
+      await render(el1);
+      await steps[0];
+      await unmount();
+      const modemSpeed = 112000;
+      const frameCount = Math.ceil(size / (modemSpeed / 10000) / frameDuration);
+      const el2 = createElement(Test, { modemSpeed });
+      await render(el2);
+      await steps[frameCount];
+      expect(outputs[frameCount]).to.eql(outputs[0]);
+    });
+  })
+  it('should be able to handle a long animation', async function() {
+    await withTestRenderer(async ({ render, unmount, toJSON }) => {
+      const steps = createSteps();
+      const outputs = [];
+      const path = resolve('./ansi/LM-OKC.ICE');
+      const dataSource = await readFile(path);
+      const frameDuration = 5;
+      const { size } = await stat(path);
+      let count = 0;
+      function Test({ modemSpeed }) {
+        const screen = useAnsi(dataSource, { modemSpeed, frameDuration });
+        outputs.push(screen);
+        steps[count++].done();
+        return 'Hello';
+      }
+      const el1 = createElement(Test, { modemSpeed: Infinity });
+      await render(el1);
+      await steps[0];
+      await unmount();
+      const modemSpeed = 5600000;
+      const frameCount = Math.ceil(size / (modemSpeed / 10000) / frameDuration);
+      const el2 = createElement(Test, { modemSpeed });
+      await render(el2);
+      await steps[frameCount];
+      expect(outputs[frameCount]).to.eql(outputs[0]);
+    });
+  })
+  it('should be able to deal with empty data source', async function() {
+    await withTestRenderer(async ({ render, toJSON }) => {
+      const steps = createSteps();
+      const outputs = [];
+      const array = new Uint8Array(0);
+      const dataSource = array.buffer;
+      let count = 0;
+      function Test() {
+        const screen = useAnsi(dataSource, {
+          modemSpeed: Infinity
+        });
+        outputs.push(screen);
+        steps[count++].done();
+        return 'Hello';
+      }
+      const el = createElement(Test);
+      await render(el);
+      await steps[0];
+      expect(outputs[0]).to.be.an('object');
+      expect(outputs[0]).to.have.property('width', 80);
+      expect(outputs[0]).to.have.property('height', 24);
     });
   })
 })
