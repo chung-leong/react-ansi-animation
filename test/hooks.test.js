@@ -235,7 +235,66 @@ describe('#useANSI()', function() {
       expect(outputs[0]).to.have.property('height', 24);
     });
   })
-  // *** tests for individual ANSI commands
+  it('should omit background color from untouched segments when transparency is on', async function() {
+    await withTestRenderer(async ({ render }) => {
+      const steps = createSteps();
+      const outputs = [];
+      const array = new Uint8Array(Array.from('This is a test').map(c => c.charCodeAt()));
+      const dataSource = array.buffer;
+      let count = 0;
+      function Test() {
+        const screen = useAnsi(dataSource, {
+          modemSpeed: Infinity,
+          transparency: true,
+        });
+        outputs.push(screen);
+        steps[count++].done();
+        return 'Hello';
+      }
+      const el = createElement(Test);
+      await render(el);
+      await steps[0];
+      expect(outputs[0]).to.be.an('object');
+      expect(outputs[0]).to.have.property('width', 80);
+      expect(outputs[0]).to.have.property('height', 24);
+      const line1 = outputs[0].lines[0];
+      expect(line1).to.have.lengthOf(2);
+      expect(line1[0].text).to.equal('This is a test');
+      expect(line1[0]).to.have.property('transparent', false);
+      expect(line1[1]).to.have.property('transparent', true);
+    });
+  })
+  it('should skip first pass when dimensions are fixed', async function() {
+    await withTestRenderer(async ({ render }) => {
+      const steps = createSteps();
+      const outputs = [];
+      const array = new Uint8Array(0);
+      const dataSource = array.buffer;
+      let count = 0;
+      function Test() {
+        const screen = useAnsi(dataSource, {
+          modemSpeed: Infinity,
+          minWidth: 40,
+          maxWidth: 40,
+          minHeight: 12,
+          maxHeight: 12,
+        });
+        outputs.push(screen);
+        steps[count++].done();
+        return 'Hello';
+      }
+      const el = createElement(Test);
+      await render(el);
+      await steps[0];
+      expect(outputs[0]).to.be.an('object');
+      expect(outputs[0]).to.have.property('width', 40);
+      expect(outputs[0]).to.have.property('height', 12);
+      // we'll know whether the first pass got skipped from test coverage
+    });
+  })
+
+  // *** tests for individual ANSI commands ***
+
   it('should prevent cursor from exceeding the maximum height', async function () {
     await withTestRenderer(async ({ render }) => {
       const steps = createSteps();

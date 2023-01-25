@@ -1,11 +1,12 @@
 import { useSequentialState, delay } from 'react-seq';
 
-export function useAnsi(dataSource, options) {
+export function useAnsi(dataSource, options = {}) {
   const {
     modemSpeed = 56000,
     frameDuration = 100,
     blinkDuration = 500,    
     blinking = false,
+    transparency = false,
     minWidth = 80,
     minHeight = 24,
     maxWidth = 80,
@@ -19,7 +20,7 @@ export function useAnsi(dataSource, options) {
       width: minWidth, 
       height: minHeight,
       blinked: false, 
-      lines: Array(minHeight).fill([ { text: ' '.repeat(minWidth), fgColor: 7, bgColor: 0, blink: false } ]),
+      lines: Array(minHeight).fill([ { text: ' '.repeat(minWidth), fgColor: 7, bgColor: 0, blink: false, transparent: transparency } ]),
       willBlink: false,
     };
     // obtain data, should be an ArrayBuffer
@@ -64,11 +65,9 @@ export function useAnsi(dataSource, options) {
         buffer.fill(7 << 12 | 0 << 8);
       }
       // screen states
-      let cursorX = 0, cursorY = 0;
-      let savedCursorX = 0, savedCursorY = 0;
-      let bgColorBase = 7, fgColorBase = 0;
-      let bgBright = false, fgBright = false;
-      let bgColor = 0, fgColor = 7;
+      let cursorX = 0, cursorY = 0, savedCursorX = 0, savedCursorY = 0;
+      let bgColorBase = 0, bgColor = 0, bgBright = false;
+      let fgColorBase = 7, fgColor = 7, fgBright = false;
       let escapeSeq = null;
       // process data in a single chunk on pass 1 and multiple chunks on pass 2 
       // (unless modemSpeed is set to Infinity)
@@ -135,20 +134,22 @@ export function useAnsi(dataSource, options) {
         // convert screen buffer to lines of text segments
         // and output them to hook consumer
         const lines = [];
-        const blinkMask = (blinking) ? 0x0008 : 0;
-        const bgColorMask = (blinking) ? 0x0007 : 0x000F;
-        const fgColorMask = 0x000F;
+        const blinkMask = (blinking) ? 0x0800 : 0x0000;
+        const bgColorMask = (blinking) ? 0x0700 : 0x0F00;
+        const fgColorMask = 0xF000;
+        const transparencyMask = (transparency) ? 0x0001 : 0x0000;
         let willBlink = false;
         for (let row = 0; row < height; row++) {
           const segments = [];
           const first = row * width;
           const last = first + width;
-          let attr = 0x00FF;
+          let attr = 0x00FF;  // invalid attributes
           let text = '';
           // find where there's a change in attributes
           for (let i = first; i < last; i++) {
-            const newAttr = buffer[i] & 0xFF00;
             const cp = buffer[i] & 0x00FF;
+            // codepoint 0 means nothing was drawn there
+            const newAttr = buffer[i] & 0xFF00 | (cp === 0 && transparencyMask);
             if (attr !== newAttr) {
               // add preceding text
               if (text.length > 0) {
@@ -166,10 +167,11 @@ export function useAnsi(dataSource, options) {
           }
           const line = [];
           for (const { attr, text } of segments) {
-            const blink = ((attr >> 8) & blinkMask) !== 0;
-            const bgColor = (attr >> 8) & bgColorMask;
-            const fgColor = (attr >> 12) & fgColorMask;
-            line.push({ text, fgColor, bgColor, blink });
+            const blink = (attr & blinkMask) !== 0;
+            const transparent = (attr & transparencyMask) !== 0;
+            const bgColor = (attr & bgColorMask) >> 8;
+            const fgColor = (attr & fgColorMask) >> 12;
+            line.push({ text, fgColor, bgColor, blink, transparent });
             willBlink ||= blink;
           }
           lines.push(line);
@@ -389,7 +391,7 @@ export function useAnsi(dataSource, options) {
         await delay(blinkDuration, { signal });
       }
     }    
-  }, [ dataSource, modemSpeed, frameDuration, blinkDuration, blinking, minWidth, minHeight, maxWidth, maxHeight ]);
+  }, [ dataSource, modemSpeed, frameDuration, blinkDuration, blinking, minWidth, minHeight, maxWidth, maxHeight, transparency, onBeep, onError ]);
 }
 
 function toCP437(msg) {

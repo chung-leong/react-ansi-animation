@@ -5,9 +5,9 @@ export function AnsiText({ src, srcObject, palette = cgaPalette, ...options }) {
   const dataSource = useMemo(() => getDataSource(src, srcObject), [ src, srcObject ]);
   const { lines, blinked } = useAnsi(dataSource, options);
   const children = lines.map((segments, i) => {
-    const spans = segments.map(({ text, fgColor, bgColor, blink }, j) => {
+    const spans = segments.map(({ text, fgColor, bgColor, blink, transparent }, j) => {
       const style = {
-        backgroundColor: palette[bgColor],
+        backgroundColor: (transparent) ? undefined : palette[bgColor],
         color: palette[(blink && blinked) ? bgColor : fgColor],
       };
       return createElement('span', { key: j, style }, text);

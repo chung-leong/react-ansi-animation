@@ -81,6 +81,23 @@ describe('#AnsiText', function() {
       expect(node2).to.not.eql(node1);
     });
   })
+  it('should leave out background color from undrawn area when transparency is on', async function() {
+    await withTestRenderer(async ({ render, toJSON }) => {
+      const srcObject = await readFile(resolve('./ansi/LDA-GARFIELD.ANS'));
+      const el = createElement(AnsiText, { srcObject, transparency: true });
+      await render(el);
+      const node = toJSON();
+      let transparentSegment;
+      for (const line of node.children) {
+        for (const segment of line.children) {
+          if (!segment.props.style.backgroundColor) {
+            transparentSegment = segment;
+          }
+        }
+      }
+      expect(transparentSegment).to.not.be.null;
+    });
+  })
   it('should load data through fetch when src is given', async function() {
     await withTestRenderer(async ({ render, toJSON }) => {
       let called = false;
