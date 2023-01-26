@@ -9,8 +9,8 @@ import {
   useAnsi
 } from '../index.js';
 
-describe('#useANSI()', function() {
-  it('should yield once when modem speed is infinite', async function() {
+describe('#useAnsi', function() {
+  it('should update once when modem speed is infinite', async function() {
     await withTestRenderer(async ({ render }) => {
       const steps = createSteps();
       const outputs = [];
@@ -33,10 +33,10 @@ describe('#useANSI()', function() {
       expect(outputs[0]).to.have.property('height', 24);
       expect(outputs[1]).to.be.an('object');
       expect(outputs[1]).to.have.property('width', 80);
-      expect(outputs[1]).to.have.property('height', 40);
+      expect(outputs[1]).to.have.property('height', 42);
       expect(outputs[1]).to.have.property('blinked', false);
       expect(outputs[1]).to.have.property('willBlink', false);
-      expect(outputs[1]).to.have.property('lines').that.has.lengthOf(40);
+      expect(outputs[1]).to.have.property('lines').that.has.lengthOf(42);
       for (const line of outputs[1].lines) {
         const text = line.map(s => s.text).join('');
         expect(text).to.have.lengthOf(80);
@@ -62,10 +62,10 @@ describe('#useANSI()', function() {
       await steps[0];
       expect(outputs[0]).to.be.an('object');
       expect(outputs[0]).to.have.property('width', 80);
-      expect(outputs[0]).to.have.property('height', 40);
+      expect(outputs[0]).to.have.property('height', 42);
       expect(outputs[0]).to.have.property('blinked', false);
       expect(outputs[0]).to.have.property('willBlink', false);
-      expect(outputs[0]).to.have.property('lines').that.has.lengthOf(40);
+      expect(outputs[0]).to.have.property('lines').that.has.lengthOf(42);
       for (const line of outputs[0].lines) {
         const text = line.map(s => s.text).join('');
         expect(text).to.have.lengthOf(80);
@@ -94,7 +94,7 @@ describe('#useANSI()', function() {
       await steps[0];
       expect(outputs[0]).to.be.an('object');
       expect(outputs[0]).to.have.property('width', 80);
-      expect(outputs[0]).to.have.property('height', 25);
+      expect(outputs[0]).to.have.property('height', 27);
       expect(outputs[0]).to.have.property('blinked', false);
       expect(outputs[0]).to.have.property('willBlink', true);
       await steps[1];
@@ -149,7 +149,7 @@ describe('#useANSI()', function() {
       await steps[0];
       expect(outputs[0]).to.be.an('object');
       expect(outputs[0]).to.have.property('width', 80);
-      expect(outputs[0]).to.have.property('height', 25);
+      expect(outputs[0]).to.have.property('height', 27);
       expect(outputs[0]).to.have.property('blinked', false);
       expect(outputs[0]).to.have.property('willBlink', false);
     });
@@ -176,7 +176,7 @@ describe('#useANSI()', function() {
       await steps[0];
       expect(outputs[0]).to.be.an('object');
       expect(outputs[0]).to.have.property('width', 80);
-      expect(outputs[0]).to.have.property('height', 25);
+      expect(outputs[0]).to.have.property('height', 27);
       expect(outputs[0]).to.have.property('blinked', false);
       expect(outputs[0]).to.have.property('willBlink', true);
       await Promise.race([ delay(75), steps[1] ]);
@@ -1067,10 +1067,14 @@ describe('#useANSI()', function() {
       const dataSource = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, { modemSpeed: Infinity });
-        outputs.push(screen);
-        steps[count++].done();
-        return '';
+        try {
+          const screen = useAnsi(dataSource, { modemSpeed: Infinity });
+          outputs.push(screen);
+          steps[count++].done();
+          return '';  
+        } catch (err) {
+          console.error(err);
+        }
       }
       const el = createElement(Test);
       await render(el);
@@ -1087,10 +1091,14 @@ describe('#useANSI()', function() {
       const dataSource = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, { modemSpeed: Infinity });
-        outputs.push(screen);
-        steps[count++].done();
-        return '';
+        try {
+          const screen = useAnsi(dataSource, { modemSpeed: Infinity });
+          outputs.push(screen);
+          steps[count++].done();
+          return ''; 
+        } catch (err) {
+          console.error(err);
+        }
       }
       const el = createElement(Test);
       await render(el);

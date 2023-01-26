@@ -37,165 +37,85 @@ export function useAnsi(dataSource, options = {}) {
         onError?.(err);
       }
     } else {
+      // return initial state when we have real contents
       initialized = false;
       data = dataSource;
     }
     const chars = new Uint8Array(data);
-    // calculate the number frames pass before we need to flip the blink state
-    const blinkFrameCount = Math.ceil(blinkDuration / frameDuration);
-    let blinked = false, blinkFramesRemaining = blinkFrameCount;
     let maxCursorX = 0, maxCursorY = 0;
     // process data in two passes: the first determines the maximum extent of the contents
     // while the second pass actually outputs them
     for (let pass = 1; pass <= 2; pass++) {
-      let width, height;
-      let buffer = null;
-      if (pass === 1) {
-        // there's no need to the first pass if the minimum dimensions match the maximum
-        if (minWidth === maxWidth && minHeight === maxHeight) {
-          continue;
-        }
-      } else if (pass === 2) {
-        // determine the screen dimension
-        width = Math.max(minWidth, maxCursorX + 1);
-        height = Math.max(minHeight, maxCursorY + 1);
-        // create buffer
-        buffer = new Uint16Array(width * height);
-        // fill buffer with default text attribute
-        buffer.fill(7 << 12 | 0 << 8);
-      }
       // screen states
+      let width, height;
       let cursorX = 0, cursorY = 0, savedCursorX = 0, savedCursorY = 0;
       let bgColorBase = 0, bgColor = 0, bgBright = false;
       let fgColorBase = 7, fgColor = 7, fgBright = false;
-      let escapeSeq = null;
-      // process data in a single chunk on pass 1 and multiple chunks on pass 2 
-      // (unless modemSpeed is set to Infinity)
-      const animationSpeed = (pass === 1) ? Infinity : modemSpeed / 10 / 1000;
-      const chunkLength = Math.floor(animationSpeed * frameDuration);
-      for (let i = 0; i < chars.length; i += chunkLength) {
-        if (pass === 2 && i > 0) {
-          // wait for previous frame to end
-          await delay(frameDuration, { signal });
-          if (blinking) {
-            // update blink states
-            blinkFramesRemaining--;
-            if (blinkFramesRemaining === 0) {
-              blinked = !blinked;
-              blinkFramesRemaining = blinkFrameCount;
+      let blinked = false;
+      let buffer = null, escapeSeq = null;
+      if (pass === 1) {
+        // there's no need to do the first pass if the minimum dimensions match the maximum
+        if (minWidth !== maxWidth || minHeight !== maxHeight) {
+          chars.map(processCharacter);
+        }
+      } else if (pass === 2) {
+        // calculate the number frames pass before we need to flip the blink state
+        const blinkFrameCount = Math.ceil(blinkDuration / frameDuration);
+        let blinkFramesRemaining = blinkFrameCount;
+        // determine the screen dimension
+        width = Math.max(minWidth, maxCursorX + 1);
+        height = Math.max(minHeight, maxCursorY + 1);
+        // create buffer, filling it with default text attribute
+        buffer = new Uint16Array(width * height);
+        buffer.fill(cell(0));
+        // process data in a multiple chunks 
+        const animationSpeed = modemSpeed / 10 / 1000;
+        const chunkLength = Math.floor(animationSpeed * frameDuration);
+        for (let i = 0; i < chars.length; i += chunkLength) {
+          if (i > 0) {
+            // wait for previous frame to end
+            await delay(frameDuration, { signal });
+            if (blinking) {
+              // update blink states
+              blinkFramesRemaining--;
+              if (blinkFramesRemaining === 0) {
+                blinked = !blinked;
+                blinkFramesRemaining = blinkFrameCount;
+              }
             }
           }
-        }
-        for (const c of chars.subarray(i, i + chunkLength)) {
-          if (escapeSeq) {
-            if (escapeSeq.length === 1) {
-              escapeSeq.push(c);
-              if (c !== 0x5b) {
-                // invalid sequence
-                for (const c of escapeSeq) {
-                  setCharacter(c);
-                }
-                escapeSeq = null;
-              }
-            } else {
-              if (c >= 0x40 && c <= 0x7e) {
-                // @ to ~
-                const cmd = cp437Chars[c];
-                const params = escapeSeq.slice(2).map(c => cp437Chars[c]).join('');
-                processCommand(cmd, params);
-                escapeSeq = null;
-              } else {
-                escapeSeq.push(c);
-              }
-            }
+          chars.subarray(i, i + chunkLength).map(processCharacter);
+          // done with this chunk, time to output what's held in the screen buffer to the hook consumer,
+          // consolidating characters with identical attributes into segments 
+          screen = scanBuffer();
+          if (!initialized) {
+            // initialize with real contents
+            initial(screen);
+            initialized = true;
           } else {
-            if (c === 0x07) {
-              onBeep?.();
-            } else if (c === 0x08) {
-              cursorX--;
-              if (cursorX < 0) {
-                cursorX = 0;
-              }
-            } else if (c === 0x09) {
-              // tabs
-              cursorX = ((cursorX >> 3) << 3) + 8;
-            } else if (c === 0x0a) {
-              cursorY++;
-            } else if (c === 0x0c) {
-              processCommand('J', 2);
-            } else if (c === 0x0d) {
-              cursorX = 0;
-            } else if (c === 0x1a) {
-              break;
-            } else if (c === 0x1b) {
-              escapeSeq = [ c ];
-            } else {
-              setCharacter(c);
-            }
+            yield screen;
           }
         }
-        if (pass === 1) {
-          // we're done--the first pass doesn't output anything
-          continue;
-        }
-        // convert screen buffer to lines of text segments
-        // and output them to hook consumer
-        const lines = [];
-        const blinkMask = (blinking) ? 0x0800 : 0x0000;
-        const bgColorMask = (blinking) ? 0x0700 : 0x0F00;
-        const fgColorMask = 0xF000;
-        const transparencyMask = (transparency) ? 0x0001 : 0x0000;
-        let willBlink = false;
-        for (let row = 0; row < height; row++) {
-          const segments = [];
-          const first = row * width;
-          const last = first + width;
-          let attr = 0x00FF;  // invalid attributes
-          let text = '';
-          // find where there's a change in attributes
-          for (let i = first; i < last; i++) {
-            const cp = buffer[i] & 0x00FF;
-            // codepoint 0 means nothing was drawn there
-            const newAttr = buffer[i] & 0xFF00 | (cp === 0 && transparencyMask);
-            if (attr !== newAttr) {
-              // add preceding text
-              if (text.length > 0) {
-                segments.push({ attr, text });
-              }
-              attr = newAttr;
-              text = '';
-            }
-            // map codepoint 0 to space
-            text += cp437Chars[cp || 0x20];
+        // go into an endless loop if there's blinking text (unless blinking is just truthy and not true)
+        if (screen.willBlink && blinking === true) {
+          // wait out the remaining blink period
+          await delay(frameDuration * blinkFramesRemaining, { signal });
+          for (;;) {
+            blinked = !blinked;
+            yield { ...screen, blinked };
+            await delay(blinkDuration, { signal });
           }
-          // add leftover at end of line
-          if (text.length > 0) {
-            segments.push({ attr, text });
-          }
-          const line = [];
-          for (const { attr, text } of segments) {
-            const blink = (attr & blinkMask) !== 0;
-            const transparent = (attr & transparencyMask) !== 0;
-            const bgColor = (attr & bgColorMask) >> 8;
-            const fgColor = (attr & fgColorMask) >> 12;
-            line.push({ text, fgColor, bgColor, blink, transparent });
-            willBlink = willBlink || blink;
-          }
-          lines.push(line);
-        }
-        screen = { width, height, lines, blinked, willBlink };
-        if (!initialized) {
-          // initialize with real contents
-          initial(screen);
-          initialized = true;
-        } else {
-          yield screen;
-        }
-      } // end of chunk processing
-
-      // --- helper functions down here ----
+        }    
+      }
       
-      function setCharacter(char) {
+      // --- helper functions below ----
+     
+      function cell(c) {
+        // pack text attributes and codepoint into 16-bit cell
+        return (bgColor << 8) | (fgColor << 12) | c;
+      }
+
+      function setCharacter(c) {
         if (!buffer) {
           if (cursorX > maxCursorX) {
             maxCursorX = cursorX;
@@ -204,10 +124,7 @@ export function useAnsi(dataSource, options = {}) {
             maxCursorY = cursorY;
           }
         } else {
-          // calculate cell position
-          const index = cursorY * width + cursorX;
-          // pack into 16-bit cell
-          buffer[index] = (bgColor << 8) | (fgColor << 12) | char;
+          buffer[cursorY * width + cursorX] = cell(c);
         }
         cursorX++;
         if (cursorX >= maxWidth) {
@@ -232,7 +149,58 @@ export function useAnsi(dataSource, options = {}) {
         const parts = text.split(';');
         return parts.map(p => parseOne(p, def));
       }
-    
+
+      function processCharacter(c) {
+        if (escapeSeq) {
+          if (escapeSeq.length === 1) {
+            escapeSeq.push(c);
+            if (c !== 0x5b) {
+              // invalid sequence
+              for (const c of escapeSeq) {
+                setCharacter(c);
+              }
+              escapeSeq = null;
+            }
+          } else {
+            if (c >= 0x40 && c <= 0x7e) {
+              // @ to ~
+              const cmd = cp437Chars[c];
+              const params = escapeSeq.slice(2).map(c => cp437Chars[c]).join('');
+              processCommand(cmd, params);
+              escapeSeq = null;
+            } else {
+              escapeSeq.push(c);
+            }
+          }
+        } else {
+          if (c === 0x07) {
+            onBeep?.();
+          } else if (c === 0x08) {
+            // backspace
+            cursorX--;
+            if (cursorX < 0) {
+              cursorX = 0;
+            }
+          } else if (c === 0x09) {
+            // tabs
+            cursorX = ((cursorX >> 3) << 3) + 8;
+          } else if (c === 0x0a) {
+            // linefeed
+            cursorY++;
+          } else if (c === 0x0c) {
+            // clear screen
+            processCommand('J', 2);
+          } else if (c === 0x0d) {
+            // carriage return
+            cursorX = 0;
+          } else if (c === 0x1b) {
+            escapeSeq = [ c ];
+          } else {
+            setCharacter(c);
+          }
+        }
+      }
+      
       function processCommand(cmd, params = '') {
         if (cmd === 'A') {
           const count = parseOne(params, 1);
@@ -277,7 +245,7 @@ export function useAnsi(dataSource, options = {}) {
               start = 0;
               end = width * height;
             }
-            buffer.fill(bgColor << 8 | fgColor << 12, start, end);;
+            buffer.fill(cell(0), start, end);;
           }
           if (mode === 2) {
             cursorX = 0;
@@ -298,7 +266,7 @@ export function useAnsi(dataSource, options = {}) {
               start = cursorY * width;
               end = start + width;
             }
-            buffer.fill(bgColor << 8 | fgColor << 12, start, end);
+            buffer.fill(cell(0), start, end);
           }
         } else if (cmd === 'L') {
           // insert line
@@ -309,7 +277,7 @@ export function useAnsi(dataSource, options = {}) {
             buffer.copyWithin(target, source);
             const start = source;
             const end = target;
-            buffer.fill(bgColor << 8 | fgColor << 12, start, end);
+            buffer.fill(cell(0), start, end);
           }
           if (cursorY <= maxCursorY) {
             maxCursorY += count;
@@ -323,7 +291,7 @@ export function useAnsi(dataSource, options = {}) {
             buffer.copyWithin(target, source);
             const start = source;
             const end = width * height;
-            buffer.fill(bgColor << 8 | fgColor << 12, start, end);
+            buffer.fill(cell(0), start, end);
           }
         } else if (cmd === 'P') {
           // delete characters
@@ -335,7 +303,7 @@ export function useAnsi(dataSource, options = {}) {
             buffer.copyWithin(target, source, last);
             const start = last - count;
             const end = last;
-            buffer.fill(bgColor << 8 | fgColor << 12, start, end);
+            buffer.fill(cell(0), start, end);
           }
         } else if (cmd === 'S') {
           // scroll up
@@ -346,7 +314,7 @@ export function useAnsi(dataSource, options = {}) {
             buffer.copyWithin(target, source);
             const start = width * (height - count);
             const end = width * height;
-            buffer.fill(bgColor << 8 | fgColor << 12, start, end);
+            buffer.fill(cell(0), start, end);
           }
         } else if (cmd === 'T') {
           // scroll down
@@ -357,7 +325,7 @@ export function useAnsi(dataSource, options = {}) {
             buffer.copyWithin(target, source);
             const start = 0;
             const end = count * width;
-            buffer.fill(bgColor << 8 | fgColor << 12, start, end);
+            buffer.fill(cell(0), start, end);
           }
         } else if (cmd === 'X') {
           // clear characters
@@ -365,7 +333,7 @@ export function useAnsi(dataSource, options = {}) {
           if (buffer) {
             const start = cursorY * width + cursorX;
             const end = Math.min(start + count, (cursorY + 1) * width);
-            buffer.fill(bgColor << 8 | fgColor << 12, start, end);
+            buffer.fill(cell(0), start, end);
           }
         } else if (cmd === 'm') {
           // modify text properties
@@ -406,22 +374,58 @@ export function useAnsi(dataSource, options = {}) {
           cursorY = savedCursorY;
         }
       } 
-    } // end of pass
-    // handle empty data source
+
+      function scanBuffer() {
+        const lines = [];
+        const blinkMask = (blinking) ? 0x0800 : 0x0000;
+        const bgColorMask = (blinking) ? 0x0700 : 0x0F00;
+        const fgColorMask = 0xF000;
+        const transparencyMask = (transparency) ? 0x0001 : 0x0000;
+        let willBlink = false;
+        for (let row = 0; row < height; row++) {
+          const segments = [];
+          const first = row * width;
+          const last = first + width;
+          let attr = 0x00FF;  // invalid attributes
+          let text = '';
+          // find where there's a change in attributes
+          for (let i = first; i < last; i++) {
+            const cp = buffer[i] & 0x00FF;
+            // codepoint 0 means nothing was drawn there
+            const newAttr = buffer[i] & 0xFF00 | (cp === 0 && transparencyMask);
+            if (attr !== newAttr) {
+              // add preceding text
+              if (text.length > 0) {
+                segments.push({ attr, text });
+              }
+              attr = newAttr;
+              text = '';
+            }
+            // map codepoint 0 to space
+            text += cp437Chars[cp || 0x20];
+          }
+          // add leftover at end of line
+          if (text.length > 0) {
+            segments.push({ attr, text });
+          }
+          const line = [];
+          for (const { attr, text } of segments) {
+            const blink = (attr & blinkMask) !== 0;
+            const transparent = (attr & transparencyMask) !== 0;
+            const bgColor = (attr & bgColorMask) >> 8;
+            const fgColor = (attr & fgColorMask) >> 12;
+            line.push({ text, fgColor, bgColor, blink, transparent });
+            willBlink = willBlink || blink;
+          }
+          lines.push(line);
+        }
+        return { width, height, lines, blinked, willBlink };
+      }
+    } 
     if (!initialized) {
+      // the data source was empty--initialize with empty screen
       initial(screen);
     }
-    // go into an endless loop if there's blinking text
-    // unless blinking is just truthy
-    if (screen.willBlink && blinking === true) {
-      // wait out the remaining blink period
-      await delay(frameDuration * blinkFramesRemaining, { signal });
-      for (;;) {
-        blinked = !blinked;
-        yield { ...screen, blinked };
-        await delay(blinkDuration, { signal });
-      }
-    }    
   }, [ dataSource, modemSpeed, frameDuration, blinkDuration, blinking, minWidth, minHeight, maxWidth, maxHeight, transparency, onBeep, onError ]);
 }
 

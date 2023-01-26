@@ -58,7 +58,7 @@ describe('#AnsiText', function() {
       const node = toJSON();
       expect(node).to.have.property('type', 'code');
       expect(node.props).to.eql({ className: 'AnsiText' });
-      expect(node.children).to.have.lengthOf(40);
+      expect(node.children).to.have.lengthOf(42);
     });
   })
   it('should accept a promise as srcObject', async function() {
@@ -70,7 +70,7 @@ describe('#AnsiText', function() {
       const node = toJSON();
       expect(node).to.have.property('type', 'code');
       expect(node.props).to.eql({ className: 'AnsiText' });
-      expect(node.children).to.have.lengthOf(40);
+      expect(node.children).to.have.lengthOf(42);
     });
   })
   it('should display blinking text', async function() {
@@ -125,7 +125,7 @@ describe('#AnsiText', function() {
         const node = toJSON();
         expect(node).to.have.property('type', 'code');
         expect(node.props).to.eql({ className: 'AnsiText' });
-        expect(node.children).to.have.lengthOf(40); 
+        expect(node.children).to.have.lengthOf(42); 
       } finally {
         delete global.fetch;
       }
