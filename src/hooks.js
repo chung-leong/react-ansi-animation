@@ -78,8 +78,8 @@ export function useAnsi(dataSource, options = {}) {
           // wait for previous frame to end
           await delay(frameDuration, { signal });
           if (blinking) {
-          // update blink states
-          blinkFramesRemaining--;
+            // update blink states
+            blinkFramesRemaining--;
             if (blinkFramesRemaining === 0) {
               blinked = !blinked;
               blinkFramesRemaining = blinkFrameCount;
@@ -109,9 +109,7 @@ export function useAnsi(dataSource, options = {}) {
               }
             }
           } else {
-            if (c === 0x00) {
-              break;
-            } else if (c === 0x07) {
+            if (c === 0x07) {
               onBeep?.();
             } else if (c === 0x08) {
               cursorX--;
@@ -119,7 +117,8 @@ export function useAnsi(dataSource, options = {}) {
                 cursorX = 0;
               }
             } else if (c === 0x09) {
-              // tab
+              // tabs
+              cursorX = ((cursorX >> 3) << 3) + 8;
             } else if (c === 0x0a) {
               cursorY++;
             } else if (c === 0x0c) {

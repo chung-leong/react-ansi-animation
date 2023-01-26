@@ -31,9 +31,11 @@ describe('#AnsiText', function() {
   it('should output error message when data source throws', async function() {
     await withTestRenderer(async ({ render, toJSON }) => {
       const srcObject = (async () => {
-        throw new Error('This is a test');
+        // checking handling of non-ASCII characters
+        throw new Error('Stało się coś strasznego');
       })();
-      const el = createElement(AnsiText, { srcObject, minHeight: 4 });
+      let error;
+      const el = createElement(AnsiText, { srcObject, minHeight: 4, onError: (err) => error = err });
       await render(el);
       const node = toJSON();
       expect(node).to.have.property('type', 'code');
@@ -44,7 +46,8 @@ describe('#AnsiText', function() {
       expect(segment.props.style).to.have.property('color', '#aaaaaa');
       expect(segment.props.style).to.have.property('backgroundColor', '#000000');
       const text = segment.children[0];
-      expect(text).to.match(/^This is a test\s+/);
+      expect(text).to.match(/^Sta\?o si\? co\? strasznego\s+/);
+      expect(error).to.be.an('error');
     });
   })
   it('should accept a buffer as srcObject', async function() {

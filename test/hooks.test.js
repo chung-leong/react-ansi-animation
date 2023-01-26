@@ -22,7 +22,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -55,7 +55,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -87,7 +87,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -99,6 +99,32 @@ describe('#useANSI()', function() {
       expect(outputs[0]).to.have.property('willBlink', true);
       await steps[1];
       expect(outputs[1]).to.have.property('blinked', true);
+    });
+  })
+  it('should update blink flag as animation occurs', async function() {
+    await withTestRenderer(async ({ render }) => {
+      const steps = createSteps();
+      const outputs = [];
+      const dataSource = await readFile(resolve('./ansi/US-CANDLES.ANS'));
+      let count = 0;
+      function Test() {
+        const screen = useAnsi(dataSource, {
+          modemSpeed: 224000,
+          blinking: true,
+          frameDuration: 25,
+          blinkDuration: 50,
+        });
+        outputs.push(screen);
+        steps[count++].done();
+        return '';
+      }
+      const el = createElement(Test);
+      await render(el);
+      await delay(200);
+      const blinked = outputs.filter(s => s.blinked === true);
+      const unblicked = outputs.filter(s => s.blinked === false);
+      expect(blinked).has.length.that.is.greaterThan(1);
+      expect(unblicked).has.length.that.is.greaterThan(1);
     });
   })
   it('should interpret blink flag as bright background when blinking is false', async function() {
@@ -116,7 +142,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -143,7 +169,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -170,7 +196,7 @@ describe('#useANSI()', function() {
         const screen = useAnsi(dataSource, { modemSpeed, frameDuration });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el1 = createElement(Test, { modemSpeed: Infinity });
       await render(el1);
@@ -197,7 +223,7 @@ describe('#useANSI()', function() {
         const screen = useAnsi(dataSource, { modemSpeed, frameDuration });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el1 = createElement(Test, { modemSpeed: Infinity });
       await render(el1);
@@ -224,7 +250,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -238,7 +264,7 @@ describe('#useANSI()', function() {
     await withTestRenderer(async ({ render }) => {
       const steps = createSteps();
       const outputs = [];
-      const array = new Uint8Array(Array.from('This is a test').map(c => c.charCodeAt()));
+      const array = new Uint8Array(Array.from('This is a test').map(ord));
       const dataSource = array.buffer;
       let count = 0;
       function Test() {
@@ -248,7 +274,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -280,7 +306,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -312,7 +338,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -348,7 +374,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -383,7 +409,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -425,7 +451,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -466,7 +492,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -486,7 +512,7 @@ describe('#useANSI()', function() {
       const steps = createSteps();
       const outputs = [];
       const array = new Uint8Array([
-        ...Array.from('X'.repeat(8 * 8)).map(c => c.charCodeAt()),
+        ...Array.from('X'.repeat(8 * 8)).map(ord),
         ...[
           ESC, ord('['), ord('4'), ord(';'), ord('4'), ord('H'),
           ESC, ord('['), ord('J'),
@@ -504,7 +530,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -522,7 +548,7 @@ describe('#useANSI()', function() {
       const steps = createSteps();
       const outputs = [];
       const array = new Uint8Array([
-        ...Array.from('X'.repeat(8 * 8)).map(c => c.charCodeAt()),
+        ...Array.from('X'.repeat(8 * 8)).map(ord),
         ...[
           ESC, ord('['), ord('4'), ord(';'), ord('4'), ord('H'),
           ESC, ord('['), ord('1'), ord('J'),
@@ -540,7 +566,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -558,7 +584,7 @@ describe('#useANSI()', function() {
       const steps = createSteps();
       const outputs = [];
       const array = new Uint8Array([
-        ...Array.from('X'.repeat(8 * 8)).map(c => c.charCodeAt()),
+        ...Array.from('X'.repeat(8 * 8)).map(ord),
         ...[
           ESC, ord('['), ord('4'), ord(';'), ord('4'), ord('H'),
           ESC, ord('['), ord('2'), ord('J'),
@@ -576,7 +602,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -594,7 +620,7 @@ describe('#useANSI()', function() {
       const steps = createSteps();
       const outputs = [];
       const array = new Uint8Array([
-        ...Array.from('X'.repeat(8 * 8)).map(c => c.charCodeAt()),
+        ...Array.from('X'.repeat(8 * 8)).map(ord),
         ...[
           ESC, ord('['), ord('4'), ord(';'), ord('4'), ord('H'),
           ESC, ord('['), ord('K'),
@@ -612,7 +638,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -630,7 +656,7 @@ describe('#useANSI()', function() {
       const steps = createSteps();
       const outputs = [];
       const array = new Uint8Array([
-        ...Array.from('X'.repeat(8 * 8)).map(c => c.charCodeAt()),
+        ...Array.from('X'.repeat(8 * 8)).map(ord),
         ...[
           ESC, ord('['), ord('4'), ord(';'), ord('4'), ord('H'),
           ESC, ord('['), ord('1'), ord('K'),
@@ -648,7 +674,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -666,7 +692,7 @@ describe('#useANSI()', function() {
       const steps = createSteps();
       const outputs = [];
       const array = new Uint8Array([
-        ...Array.from('X'.repeat(8 * 8)).map(c => c.charCodeAt()),
+        ...Array.from('X'.repeat(8 * 8)).map(ord),
         ...[
           ESC, ord('['), ord('4'), ord(';'), ord('4'), ord('H'),
           ESC, ord('['), ord('2'), ord('K'),
@@ -684,7 +710,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -702,7 +728,7 @@ describe('#useANSI()', function() {
       const steps = createSteps();
       const outputs = [];
       const array = new Uint8Array([
-        ...Array.from('X'.repeat(8 * 8)).map(c => c.charCodeAt()),
+        ...Array.from('X'.repeat(8 * 8)).map(ord),
         ...[
           ESC, ord('['), ord('5'), ord(';'), ord('1'), ord('H'),
           ord('Y'),
@@ -722,7 +748,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -741,7 +767,7 @@ describe('#useANSI()', function() {
       const steps = createSteps();
       const outputs = [];
       const array = new Uint8Array([
-        ...Array.from('X'.repeat(8 * 8)).map(c => c.charCodeAt()),
+        ...Array.from('X'.repeat(8 * 8)).map(ord),
         ...[
           ESC, ord('['), ord('6'), ord(';'), ord('1'), ord('H'),
           ord('Y'),
@@ -761,7 +787,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -777,7 +803,7 @@ describe('#useANSI()', function() {
       const steps = createSteps();
       const outputs = [];
       const array = new Uint8Array([
-        ...Array.from('X'.repeat(8 * 8)).map(c => c.charCodeAt()),
+        ...Array.from('X'.repeat(8 * 8)).map(ord),
         ...[
           ESC, ord('['), ord('4'), ord(';'), ord('8'), ord('H'),
           ord('Y'),
@@ -797,7 +823,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -813,7 +839,7 @@ describe('#useANSI()', function() {
       const steps = createSteps();
       const outputs = [];
       const array = new Uint8Array([
-        ...Array.from('X'.repeat(8 * 8)).map(c => c.charCodeAt()),
+        ...Array.from('X'.repeat(8 * 8)).map(ord),
         ...[
           ESC, ord('['), ord('4'), ord(';'), ord('8'), ord('H'),
           ord('Y'),
@@ -835,7 +861,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -851,7 +877,7 @@ describe('#useANSI()', function() {
       const steps = createSteps();
       const outputs = [];
       const array = new Uint8Array([
-        ...Array.from('X'.repeat(8 * 8)).map(c => c.charCodeAt()),
+        ...Array.from('X'.repeat(8 * 8)).map(ord),
         ...[
           ESC, ord('['), ord('6'), ord(';'), ord('1'), ord('H'),
           ord('Y'),
@@ -870,7 +896,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -888,7 +914,7 @@ describe('#useANSI()', function() {
       const steps = createSteps();
       const outputs = [];
       const array = new Uint8Array([
-        ...Array.from('X'.repeat(8 * 8)).map(c => c.charCodeAt()),
+        ...Array.from('X'.repeat(8 * 8)).map(ord),
         ...[
           ESC, ord('['), ord('6'), ord(';'), ord('1'), ord('H'),
           ord('Y'),
@@ -907,7 +933,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -947,7 +973,7 @@ describe('#useANSI()', function() {
         });
         outputs.push(screen);
         steps[count++].done();
-        return 'Hello';
+        return '';
       }
       const el = createElement(Test);
       await render(el);
@@ -969,6 +995,114 @@ describe('#useANSI()', function() {
       expect(line1[6]).to.have.property('bgColor', 0);
     });
   })
+
+  // *** tests for control characters ***
+
+  it('should call beep handler', async function() {
+    await withTestRenderer(async ({ render }) => {
+      const steps = createSteps();
+      const array = new Uint8Array([ 7 ]);
+      const dataSource = array.buffer;
+      let called = false;
+      function Test() {
+        const screen = useAnsi(dataSource, { modemSpeed: Infinity, onBeep: () => called = true });
+        steps[0].done();
+        return '';
+      }
+      const el = createElement(Test);
+      await render(el);
+      await steps[0];
+      expect(called).to.be.true;
+    });
+  })
+  it('should handle tabs correctly', async function() {
+    await withTestRenderer(async ({ render }) => {
+      const steps = createSteps();
+      const outputs = [];
+      const array = new Uint8Array(Array.from('AA\tB\tCCCC\tD').map(ord));
+      const dataSource = array.buffer;
+      let count = 0;
+      function Test() {
+        const screen = useAnsi(dataSource, { modemSpeed: Infinity });
+        outputs.push(screen);
+        steps[count++].done();
+        return '';
+      }
+      const el = createElement(Test);
+      await render(el);
+      await steps[0];
+      const line1 = outputs[0].lines[0];
+      expect(line1[0].text).to.match(/^AA\s{6}B\s{7}CCCC\s{4}D/);
+    });
+  })
+  it('should handle return and linefeed correctly', async function() {
+    await withTestRenderer(async ({ render }) => {
+      const steps = createSteps();
+      const outputs = [];
+      const array = new Uint8Array(Array.from('AA\nB\r\nCCCC').map(ord));
+      const dataSource = array.buffer;
+      let count = 0;
+      function Test() {
+        const screen = useAnsi(dataSource, { modemSpeed: Infinity });
+        outputs.push(screen);
+        steps[count++].done();
+        return '';
+      }
+      const el = createElement(Test);
+      await render(el);
+      await steps[0];
+      const line1 = outputs[0].lines[0];
+      expect(line1[0].text).to.match(/^AA\s+$/);
+      const line2 = outputs[0].lines[1];
+      expect(line2[0].text).to.match(/^\s{2}B\s+$/);
+      const line3 = outputs[0].lines[2];
+      expect(line3[0].text).to.match(/^CCCC\s+$/);
+    });
+  })
+  it('should handle backspace correctly', async function() {
+    await withTestRenderer(async ({ render }) => {
+      const steps = createSteps();
+      const outputs = [];
+      const array = new Uint8Array(Array.from('\b\bAA\bB').map(ord));
+      const dataSource = array.buffer;
+      let count = 0;
+      function Test() {
+        const screen = useAnsi(dataSource, { modemSpeed: Infinity });
+        outputs.push(screen);
+        steps[count++].done();
+        return '';
+      }
+      const el = createElement(Test);
+      await render(el);
+      await steps[0];
+      const line1 = outputs[0].lines[0];
+      expect(line1[0].text).to.match(/^AB\s+$/);
+    });
+  })
+  it('should handle clear screen character', async function() {
+    await withTestRenderer(async ({ render }) => {
+      const steps = createSteps();
+      const outputs = [];
+      const array = new Uint8Array(Array.from('BBBBBB\nBBBBBB\nBBBBBBBB\u000c').map(ord));
+      const dataSource = array.buffer;
+      let count = 0;
+      function Test() {
+        const screen = useAnsi(dataSource, { modemSpeed: Infinity });
+        outputs.push(screen);
+        steps[count++].done();
+        return '';
+      }
+      const el = createElement(Test);
+      await render(el);
+      await steps[0];
+      const line1 = outputs[0].lines[0];
+      expect(line1[0].text).to.match(/^\s+$/);
+      const line2 = outputs[0].lines[1];
+      expect(line2[0].text).to.match(/^\s+$/);
+      const line3 = outputs[0].lines[2];
+      expect(line3[0].text).to.match(/^\s+$/);
+    });
+  })
 })
 
 function resolve(path) {
@@ -976,7 +1110,7 @@ function resolve(path) {
 }
 
 function ord(s) {
-  return s.charCodeAt(0);
+  return s.charCodeAt();
 }
 
 const ESC = 0x1b;
