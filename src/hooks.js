@@ -77,6 +77,14 @@ export function useAnsi(dataSource, options = {}) {
         if (pass === 2 && i > 0) {
           // wait for previous frame to end
           await delay(frameDuration, { signal });
+          if (blinking) {
+          // update blink states
+          blinkFramesRemaining--;
+            if (blinkFramesRemaining === 0) {
+              blinked = !blinked;
+              blinkFramesRemaining = blinkFrameCount;
+            }
+          }
         }
         for (const c of chars.subarray(i, i + chunkLength)) {
           if (escapeSeq) {
@@ -184,13 +192,6 @@ export function useAnsi(dataSource, options = {}) {
         } else {
           yield screen;
         }
-        if (blinking) {
-          blinkFramesRemaining--;
-          if (blinkFramesRemaining === 0) {
-            blinked = !blinked;
-            blinkFramesRemaining = blinkFrameCount;
-          }
-        }
       } // end of chunk processing
 
       // --- helper functions down here ----
@@ -228,9 +229,9 @@ export function useAnsi(dataSource, options = {}) {
         return [ parseOne(parts[0], def1), parseOne(parts[1], def2) ];
       }
     
-      function parseMultiple(text) {
+      function parseMultiple(text, def) {
         const parts = text.split(';');
-        return parts.map(p => parseOne(p));
+        return parts.map(p => parseOne(p, def));
       }
     
       function processCommand(cmd, params = '') {
@@ -260,12 +261,8 @@ export function useAnsi(dataSource, options = {}) {
           }
         } else if (cmd === 'H' || cmd === 'f') {
           const [ row, col ] = parseTwo(params, 1, 1);
-          if (col <= maxWidth) {
-            cursorX = col - 1;
-          }
-          if (row <= maxHeight) {
-            cursorY = row - 1;
-          }
+          cursorX = Math.min(col, maxWidth) - 1;
+          cursorY = Math.min(row, maxHeight)- 1;
         } else if (cmd === 'J') {
           // clear screen
           const mode = parseOne(params, 0);
@@ -281,7 +278,7 @@ export function useAnsi(dataSource, options = {}) {
               start = 0;
               end = width * height;
             }
-            buffer.fill(bgColor << 8, start, end);;
+            buffer.fill(bgColor << 8 | fgColor << 12, start, end);;
           }
           if (mode === 2) {
             cursorX = 0;
@@ -289,56 +286,91 @@ export function useAnsi(dataSource, options = {}) {
           }
         } else if (cmd === 'K') {
           // clear line to end
+          const mode = parseOne(params, 0);
           if (buffer) {
-            const start = cursorY * width + cursorX;
-            const end = (cursorY + 1) * width;
-            buffer.fill(bgColor << 8, start, end);
+            let start, end;
+            if (mode === 0) {
+              start = cursorY * width + cursorX;
+              end = (cursorY + 1) * width; 
+            } else if (mode === 1) {
+              start = cursorY * width;
+              end = start + cursorX; 
+            } else if (mode === 2) {
+              start = cursorY * width;
+              end = start + width;
+            }
+            buffer.fill(bgColor << 8 | fgColor << 12, start, end);
           }
         } else if (cmd === 'L') {
           // insert line
-          const count = parseOne(params, 0);
+          const count = parseOne(params, 1);
           if (buffer) {
             const target = (cursorY + count) * width;
             const source = cursorY * width;
             buffer.copyWithin(target, source);
             const start = source;
             const end = target;
-            buffer.fill(bgColor << 8, start, end);
+            buffer.fill(bgColor << 8 | fgColor << 12, start, end);
           }
           if (cursorY <= maxCursorY) {
             maxCursorY += count;
-          } else {
-            maxCursorY = cursorY + count;
           }
         } else if (cmd === 'M') {
           // delete line
-          const count = parseOne(params, 0);
+          const count = parseOne(params, 1);
           if (buffer) {
             const target = cursorY * width;
             const source = (cursorY + count) * width;
             buffer.copyWithin(target, source);
             const start = source;
             const end = width * height;
-            buffer.fill(bgColor << 8, start, end);;
+            buffer.fill(bgColor << 8 | fgColor << 12, start, end);
           }
-        } else if (cmd === 'X') {
+        } else if (cmd === 'P') {
           // delete characters
-          const count = parseOne(params, 0);
+          const count = parseOne(params, 1);
           if (buffer) {
             const target = cursorY * width + cursorX;
             const source = target + count;
             const last = (cursorY + 1) * width;
             buffer.copyWithin(target, source, last);
-            const start = source;
+            const start = last - count;
             const end = last;
-            buffer.fill(bgColor << 8, start, end);;
+            buffer.fill(bgColor << 8 | fgColor << 12, start, end);
+          }
+        } else if (cmd === 'S') {
+          // scroll up
+          const count = parseOne(params, 1);
+          if (buffer) {
+            const target = 0;
+            const source = count * width;
+            buffer.copyWithin(target, source);
+            const start = width * (height - count);
+            const end = width * height;
+            buffer.fill(bgColor << 8 | fgColor << 12, start, end);
+          }
+        } else if (cmd === 'T') {
+          // scroll down
+          const count = parseOne(params, 1);
+          if (buffer) {
+            const target = count * width;
+            const source = 0;
+            buffer.copyWithin(target, source);
+            const start = 0;
+            const end = count * width;
+            buffer.fill(bgColor << 8 | fgColor << 12, start, end);
+          }
+        } else if (cmd === 'X') {
+          // clear characters
+          const count = parseOne(params, 1);
+          if (buffer) {
+            const start = cursorY * width + cursorX;
+            const end = Math.min(start + count, (cursorY + 1) * width);
+            buffer.fill(bgColor << 8 | fgColor << 12, start, end);
           }
         } else if (cmd === 'm') {
           // modify text properties
-          const modifiers = parseMultiple(params);
-          if (modifiers.length === 0) {
-            modifiers.push(0);
-          }
+          const modifiers = parseMultiple(params, 0);
           for (const m of modifiers) {
             if (m === 0) {
               fgBright = false;

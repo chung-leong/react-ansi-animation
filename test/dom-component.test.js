@@ -73,12 +73,16 @@ describe('#AnsiText', function() {
   it('should display blinking text', async function() {
     await withTestRenderer(async ({ render, toJSON }) => {
       const srcObject = await readFile(resolve('./ansi/US-CANDLES.ANS'));
-      const el = createElement(AnsiText, { srcObject, blinking: true, blinkDuration: 100 });
+      const el = createElement(AnsiText, { srcObject, blinking: true, modemSpeed: Infinity, blinkDuration: 100 });
       await render(el);
       const node1 = toJSON();
       await delay(120);
       const node2 = toJSON();
       expect(node2).to.not.eql(node1);
+      await delay(120);
+      const node3 = toJSON();
+      expect(node3).to.not.eql(node2);
+      expect(node3).to.eql(node1);
     });
   })
   it('should leave out background color from undrawn area when transparency is on', async function() {
