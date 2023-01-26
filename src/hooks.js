@@ -179,7 +179,7 @@ export function useAnsi(dataSource, options = {}) {
             const bgColor = (attr & bgColorMask) >> 8;
             const fgColor = (attr & fgColorMask) >> 12;
             line.push({ text, fgColor, bgColor, blink, transparent });
-            willBlink ||= blink;
+            willBlink = willBlink || blink;
           }
           lines.push(line);
         }

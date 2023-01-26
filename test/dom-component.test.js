@@ -163,7 +163,3 @@ describe('#AnsiText', function() {
     });
   })
 })
-
-function resolve(path) {
-  return (new URL(path, import.meta.url)).pathname;
-}

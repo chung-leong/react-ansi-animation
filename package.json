@@ -5,10 +5,10 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "./node_modules/mocha/bin/mocha.js -- test/*.test.js",
-    "test:debug": "./node_modules/mocha/bin/mocha.js --no-timeouts --inspect-brk -- test/*.test.js",
-    "test:watch": "./node_modules/mocha/bin/mocha.js --parallel --watch -- test/*.test.js",
-    "coverage": "./node_modules/c8/bin/c8.js ./node_modules/mocha/bin/mocha.js --parallel -- test/*.test.js"
+    "test": "./node_modules/mocha/bin/mocha.js --require test/setup.js -- test/*.test.js",
+    "test:debug": "./node_modules/mocha/bin/mocha.js --require test/setup.js --no-timeouts --inspect-brk -- test/*.test.js",
+    "test:watch": "./node_modules/mocha/bin/mocha.js --require test/setup.js --parallel --watch -- test/*.test.js",
+    "coverage": "./node_modules/c8/bin/c8.js ./node_modules/mocha/bin/mocha.js --require test/setup.js --parallel -- test/*.test.js"
   },
   "repository": {
     "type": "git",
@@ -32,6 +32,7 @@
     "react-seq": "^0.9.0"
   },
   "devDependencies": {
+    "abort-controller": "^3.0.0",
     "c8": "^7.12.0",
     "chai": "^4.3.7",
     "mocha": "^10.2.0",

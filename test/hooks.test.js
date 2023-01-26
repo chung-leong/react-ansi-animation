@@ -1105,10 +1105,6 @@ describe('#useANSI()', function() {
   })
 })
 
-function resolve(path) {
-  return (new URL(path, import.meta.url)).pathname;
-}
-
 function ord(s) {
   return s.charCodeAt();
 }
