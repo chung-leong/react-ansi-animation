@@ -20,7 +20,7 @@ export function useAnsi(dataSource, options = {}) {
       width: minWidth, 
       height: minHeight,
       blinked: false, 
-      lines: Array(minHeight).fill([ { text: ' '.repeat(minWidth), fgColor: 7, bgColor: 0, blink: false, transparent: transparency } ]),
+      lines: Array(minHeight).fill([ { text: ' '.repeat(minWidth), fgColor: 7, bgColor: 0, blink: false, transparent: true } ]),
       willBlink: false,
     };
     // obtain data, should be an ArrayBuffer
@@ -59,7 +59,7 @@ export function useAnsi(dataSource, options = {}) {
           chars.map(processCharacter);
         }
       } else if (pass === 2) {
-        // calculate the number frames pass before we need to flip the blink state
+        // calculate the number of frames during which blinking text stays visible or invisible
         const blinkFrameCount = Math.ceil(blinkDuration / frameDuration);
         let blinkFramesRemaining = blinkFrameCount;
         // determine the screen dimension
@@ -115,6 +115,7 @@ export function useAnsi(dataSource, options = {}) {
         return (bgColor << 8) | (fgColor << 12) | c;
       }
 
+      // eslint-disable-next-line no-loop-func
       function setCharacter(c) {
         if (!buffer) {
           if (cursorX > maxCursorX) {
@@ -201,6 +202,7 @@ export function useAnsi(dataSource, options = {}) {
         }
       }
       
+      // eslint-disable-next-line no-loop-func
       function processCommand(cmd, params = '') {
         if (cmd === 'A') {
           const count = parseOne(params, 1);
@@ -392,7 +394,7 @@ export function useAnsi(dataSource, options = {}) {
           for (let i = first; i < last; i++) {
             const cp = buffer[i] & 0x00FF;
             // codepoint 0 means nothing was drawn there
-            const newAttr = buffer[i] & 0xFF00 | (cp === 0 && transparencyMask);
+            const newAttr = (buffer[i] & 0xFF00) | (cp === 0 && transparencyMask);
             if (attr !== newAttr) {
               // add preceding text
               if (text.length > 0) {

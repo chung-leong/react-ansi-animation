@@ -18,9 +18,14 @@
     "React",
     "ANSI"
   ],
+  "exports": {
+    ".": "./index.js",
+    "./ink": "./ink.js"
+  },
   "files": [
     "src/",
-    "index.js"
+    "index.js",
+    "ink.js"
   ],
   "author": "Chung Leong",
   "license": "MIT",
@@ -35,6 +40,7 @@
     "abort-controller": "^3.0.0",
     "c8": "^7.12.0",
     "chai": "^4.3.7",
+    "ink": "^3.2.0",
     "mocha": "^10.2.0",
     "react": "^18.2.0",
     "react-test-renderer": "^18.2.0"
