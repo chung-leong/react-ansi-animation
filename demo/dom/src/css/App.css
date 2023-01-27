@@ -1,0 +1,92 @@
+body { 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #202020;
+  color: #ffffff;
+}
+
+.App {
+  font-family: monospace;
+  display: flex;
+  flex-direction: row;
+  width: fit-content;
+}
+
+.App .controls, .App .file-list {
+  overflow: hidden;
+  margin: 1em 1em 1em 1em;
+}
+
+.App .controls label {
+  display: block;
+  margin-bottom: 1em;
+}
+
+.App .controls select {
+  display: block;
+  margin-top: 0.3em;
+  margin-left: 0.3em;
+}
+
+.App .controls input[type="checkbox"] {
+  margin-right: 0.5em;
+}
+
+.App .file-list h4:first-child {
+  margin-top: 0;
+}
+
+.App .file-list ul {
+  padding-left: 2em;
+}
+
+.App .file-list li:hover {
+  background-color: #eeeeee;
+  color: #000000;
+  width: fit-content;
+  cursor: pointer;
+}
+
+.App .file-list li:hover::marker {
+  color: #33ff33;
+}
+
+@media screen and (max-width: 1024px) {
+  .App {
+    flex-direction: column;
+  }
+
+  .App .controls, .App .file-list {
+    margin-left: 0;
+  }
+
+  .App .controls label {
+    margin-bottom: 0;
+    margin-right: 1.5em;
+    float: left;
+  } 
+
+  .App .file-list h4:first-child {
+    margin-top: inherit;
+  }   
+}
+
+@media screen and (max-width: 640px) {
+  .App .AnsiText {
+    font-size: 2vw;
+  }
+  .App .AnsiCanvas {
+    width: 100%;
+  }
+}
+
+@media print {
+  body {
+    background-color: transparent;
+  }
+
+  .App .controls, .App .file-list {
+    display: none;
+  }
+}
