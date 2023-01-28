@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { useSequentialState, delay } from 'react-seq';
 
 export function useAnsi(dataSource, options = {}) {
@@ -7,13 +8,17 @@ export function useAnsi(dataSource, options = {}) {
     blinkDuration = 500,    
     blinking = false,
     transparency = false,
-    minWidth = 80,
-    minHeight = 24,
+    minWidth = 79,
+    minHeight = 22,
     maxWidth = 80,
-    maxHeight = 100,
+    maxHeight = 25,
     onBeep,
     onError,
+    onMetadata,
   } = options;
+  // put handlers inside a ref object so they don't cause rerunning of useSequentialState
+  const handlers = useRef();
+  handlers.current = { onBeep, onError, onMetadata };
   return useSequentialState(async function*({ initial, signal }) {
     // screen is at minimum dimensions and empty initially
     let screen = {
@@ -34,40 +39,39 @@ export function useAnsi(dataSource, options = {}) {
       } catch (err) {
         // use text from error
         data = toCP437(err.message);
-        onError?.(err);
+        handlers.current.onError?.(err);
       }
     } else {
       // return initial state when we have real contents
       initialized = false;
       data = dataSource;
     }
-    const chars = new Uint8Array(data);
-    let maxCursorX = 0, maxCursorY = 0;
+    let chars = new Uint8Array(data);
+    let detectedWidth = 0, detectedHeight = 0;
     // process data in two passes: the first determines the maximum extent of the contents
     // while the second pass actually outputs them
     for (let pass = 1; pass <= 2; pass++) {
       // screen states
-      let width, height;
-      let cursorX = 0, cursorY = 0, savedCursorX = 0, savedCursorY = 0;
-      let bgColorBase = 0, bgColor = 0, bgBright = false;
-      let fgColorBase = 7, fgColor = 7, fgBright = false;
-      let blinked = false;
-      let buffer = null, escapeSeq = null;
+      let width = detectedWidth, height = detectedHeight;
+      let cursorX = 0, cursorY = 0, savedCursorX = 0, savedCursorY = 0, maxCursorX = 0, maxCursorY = 0;
+      let bgColor = 0, fgColor = 7, bgColorBase = 0, fgColorBase = 7, bgBright = false, fgBright = false;
+      let buffer = null, blinked = false, escapeSeq = null, eof = false;
+      let metadata = null, metaString = '';
       if (pass === 1) {
         // there's no need to do the first pass if the minimum dimensions match the maximum
         if (minWidth !== maxWidth || minHeight !== maxHeight) {
           chars.map(processCharacter);
         }
+        detectedWidth = Math.max(minWidth, maxCursorX + 1);
+        detectedHeight = Math.max(minHeight, maxCursorY + 1);
       } else if (pass === 2) {
         // calculate the number of frames during which blinking text stays visible or invisible
         const blinkFrameCount = Math.ceil(blinkDuration / frameDuration);
         let blinkFramesRemaining = blinkFrameCount;
-        // determine the screen dimension
-        width = Math.max(minWidth, maxCursorX + 1);
-        height = Math.max(minHeight, maxCursorY + 1);
         // create buffer, filling it with default text attribute
         buffer = new Uint16Array(width * height);
         buffer.fill(cell(0));
+        metadata = [];
         // process data in a multiple chunks 
         const animationSpeed = modemSpeed / 10 / 1000;
         const chunkLength = Math.floor(animationSpeed * frameDuration);
@@ -96,6 +100,11 @@ export function useAnsi(dataSource, options = {}) {
             yield screen;
           }
         }
+        if (metadata.length > 0) {
+          handlers.current.onMetadata?.(metadata);
+        }
+        data = chars = buffer = null;
+
         // go into an endless loop if there's blinking text (unless blinking is just truthy and not true)
         if (screen.willBlink && blinking === true) {
           // wait out the remaining blink period
@@ -105,7 +114,7 @@ export function useAnsi(dataSource, options = {}) {
             yield { ...screen, blinked };
             await delay(blinkDuration, { signal });
           }
-        }    
+        }
       }
       
       // --- helper functions below ----
@@ -115,8 +124,14 @@ export function useAnsi(dataSource, options = {}) {
         return (bgColor << 8) | (fgColor << 12) | c;
       }
 
-      // eslint-disable-next-line no-loop-func
       function setCharacter(c) {
+        if (cursorY >= maxHeight) {
+          if (buffer) {
+            // scroll up
+            processCommand('S', `${cursorY - maxHeight + 1}`);
+          }
+          cursorY = maxHeight - 1;
+        }
         if (!buffer) {
           if (cursorX > maxCursorX) {
             maxCursorX = cursorX;
@@ -131,9 +146,6 @@ export function useAnsi(dataSource, options = {}) {
         if (cursorX >= maxWidth) {
           cursorX = 0;
           cursorY++;
-          if (cursorY >= maxHeight) {
-            cursorY = maxHeight - 1;
-          }
         }
       }
       
@@ -173,9 +185,9 @@ export function useAnsi(dataSource, options = {}) {
               escapeSeq.push(c);
             }
           }
-        } else {
+        } else if (!eof) {
           if (c === 0x07) {
-            onBeep?.();
+            handlers.current.onBeep?.();
           } else if (c === 0x08) {
             // backspace
             cursorX--;
@@ -194,15 +206,28 @@ export function useAnsi(dataSource, options = {}) {
           } else if (c === 0x0d) {
             // carriage return
             cursorX = 0;
+          } else if (c === 0x1a) {
+            eof = true;
           } else if (c === 0x1b) {
             escapeSeq = [ c ];
           } else {
             setCharacter(c);
           }
+        } else {
+          // metadata
+          if (metadata) {
+            if (c === 0 || c === 0x1a) {
+              if (metaString) {
+                metadata.push(metaString);
+                metaString = '';
+              }
+            } else {
+              metaString += cp437Chars[c];
+            }
+          }
         }
       }
       
-      // eslint-disable-next-line no-loop-func
       function processCommand(cmd, params = '') {
         if (cmd === 'A') {
           const count = parseOne(params, 1);
@@ -428,10 +453,10 @@ export function useAnsi(dataSource, options = {}) {
       // the data source was empty--initialize with empty screen
       initial(screen);
     }
-  }, [ dataSource, modemSpeed, frameDuration, blinkDuration, blinking, minWidth, minHeight, maxWidth, maxHeight, transparency, onBeep, onError ]);
+  }, [ dataSource, modemSpeed, frameDuration, blinkDuration, blinking, minWidth, minHeight, maxWidth, maxHeight, transparency ]);
 }
 
-function toCP437(msg) {
+export function toCP437(msg) {
   const array = new Uint8Array(msg.length);
   const oob = cp437Chars.indexOf('?');
   for (let i = 0; i < msg.length; i++) {

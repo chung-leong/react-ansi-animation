@@ -18,7 +18,8 @@ describe('#useAnsi', function() {
       let count = 0;
       function Test() {
         const screen = useAnsi(dataSource, {
-          modemSpeed: Infinity
+          modemSpeed: Infinity,
+          maxHeight: 1024,
         });
         outputs.push(screen);
         steps[count++].done();
@@ -29,14 +30,14 @@ describe('#useAnsi', function() {
       await steps[0];
       await steps[1];
       expect(outputs[0]).to.be.an('object');
-      expect(outputs[0]).to.have.property('width', 80);
-      expect(outputs[0]).to.have.property('height', 24);
+      expect(outputs[0]).to.have.property('width', 79);
+      expect(outputs[0]).to.have.property('height', 22);
       expect(outputs[1]).to.be.an('object');
       expect(outputs[1]).to.have.property('width', 80);
-      expect(outputs[1]).to.have.property('height', 42);
+      expect(outputs[1]).to.have.property('height', 40);
       expect(outputs[1]).to.have.property('blinked', false);
       expect(outputs[1]).to.have.property('willBlink', false);
-      expect(outputs[1]).to.have.property('lines').that.has.lengthOf(42);
+      expect(outputs[1]).to.have.property('lines').that.has.lengthOf(40);
       for (const line of outputs[1].lines) {
         const text = line.map(s => s.text).join('');
         expect(text).to.have.lengthOf(80);
@@ -51,7 +52,8 @@ describe('#useAnsi', function() {
       let count = 0;
       function Test() {
         const screen = useAnsi(dataSource, {
-          modemSpeed: Infinity
+          modemSpeed: Infinity,
+          maxHeight: 1024,
         });
         outputs.push(screen);
         steps[count++].done();
@@ -62,10 +64,10 @@ describe('#useAnsi', function() {
       await steps[0];
       expect(outputs[0]).to.be.an('object');
       expect(outputs[0]).to.have.property('width', 80);
-      expect(outputs[0]).to.have.property('height', 42);
+      expect(outputs[0]).to.have.property('height', 40);
       expect(outputs[0]).to.have.property('blinked', false);
       expect(outputs[0]).to.have.property('willBlink', false);
-      expect(outputs[0]).to.have.property('lines').that.has.lengthOf(42);
+      expect(outputs[0]).to.have.property('lines').that.has.lengthOf(40);
       for (const line of outputs[0].lines) {
         const text = line.map(s => s.text).join('');
         expect(text).to.have.lengthOf(80);
@@ -94,7 +96,7 @@ describe('#useAnsi', function() {
       await steps[0];
       expect(outputs[0]).to.be.an('object');
       expect(outputs[0]).to.have.property('width', 80);
-      expect(outputs[0]).to.have.property('height', 27);
+      expect(outputs[0]).to.have.property('height', 25);
       expect(outputs[0]).to.have.property('blinked', false);
       expect(outputs[0]).to.have.property('willBlink', true);
       await steps[1];
@@ -149,7 +151,7 @@ describe('#useAnsi', function() {
       await steps[0];
       expect(outputs[0]).to.be.an('object');
       expect(outputs[0]).to.have.property('width', 80);
-      expect(outputs[0]).to.have.property('height', 27);
+      expect(outputs[0]).to.have.property('height', 25);
       expect(outputs[0]).to.have.property('blinked', false);
       expect(outputs[0]).to.have.property('willBlink', false);
     });
@@ -176,7 +178,7 @@ describe('#useAnsi', function() {
       await steps[0];
       expect(outputs[0]).to.be.an('object');
       expect(outputs[0]).to.have.property('width', 80);
-      expect(outputs[0]).to.have.property('height', 27);
+      expect(outputs[0]).to.have.property('height', 25);
       expect(outputs[0]).to.have.property('blinked', false);
       expect(outputs[0]).to.have.property('willBlink', true);
       await Promise.race([ delay(75), steps[1] ]);
@@ -256,8 +258,8 @@ describe('#useAnsi', function() {
       await render(el);
       await steps[0];
       expect(outputs[0]).to.be.an('object');
-      expect(outputs[0]).to.have.property('width', 80);
-      expect(outputs[0]).to.have.property('height', 24);
+      expect(outputs[0]).to.have.property('width', 79);
+      expect(outputs[0]).to.have.property('height', 22);
     });
   })
   it('should omit background color from untouched segments when transparency is on', async function() {
@@ -280,8 +282,6 @@ describe('#useAnsi', function() {
       await render(el);
       await steps[0];
       expect(outputs[0]).to.be.an('object');
-      expect(outputs[0]).to.have.property('width', 80);
-      expect(outputs[0]).to.have.property('height', 24);
       const line1 = outputs[0].lines[0];
       expect(line1).to.have.lengthOf(2);
       expect(line1[0].text).to.equal('This is a test');
@@ -343,8 +343,6 @@ describe('#useAnsi', function() {
       const el = createElement(Test);
       await render(el);
       await steps[0];
-      expect(outputs[0]).to.have.property('width', 80);
-      expect(outputs[0]).to.have.property('height', 2);
       const line1 = outputs[0].lines[0];
       expect(line1[0].text).to.match(/^A\u001b\]A\s+$/);
     });
@@ -379,8 +377,6 @@ describe('#useAnsi', function() {
       const el = createElement(Test);
       await render(el);
       await steps[0];
-      expect(outputs[0]).to.have.property('width', 80);
-      expect(outputs[0]).to.have.property('height', 4);
       const line1 = outputs[0].lines[0];
       expect(line1[0].text).to.match(/^AB\s+$/);
       const line4 = outputs[0].lines[3];
@@ -414,8 +410,6 @@ describe('#useAnsi', function() {
       const el = createElement(Test);
       await render(el);
       await steps[0];
-      expect(outputs[0]).to.have.property('width', 4);
-      expect(outputs[0]).to.have.property('height', 24);
       const line1 = outputs[0].lines[0];
       expect(line1[0].text).to.match(/^C\s+B$/);
     });
@@ -437,7 +431,6 @@ describe('#useAnsi', function() {
         ord('E'),
         ord('F'),
         ord('G'),
-        ord('H'),
       ]);
       const dataSource = array.buffer;
       let count = 0;
@@ -456,14 +449,57 @@ describe('#useAnsi', function() {
       const el = createElement(Test);
       await render(el);
       await steps[0];
-      expect(outputs[0]).to.have.property('width', 4);
-      expect(outputs[0]).to.have.property('height', 4);
       const line1 = outputs[0].lines[0];
       expect(line1[0].text).to.match(/^A\s+B$/);
       const line2 = outputs[0].lines[1];
       expect(line2[0].text).to.match(/^C\s+$/);
       const line4 = outputs[0].lines[3];
-      expect(line4[0].text).to.match(/^HEFG$/);
+      expect(line4[0].text).to.match(/^DEFG$/);
+    });
+  })
+  it('should should cause scrolling when height exceed maximum', async function() {
+    await withTestRenderer(async ({ render }) => {
+      const steps = createSteps();
+      const outputs = [];
+      const array = new Uint8Array([
+        ord('A'),                 // line 1 -> gone
+        ESC, ord('['), ord('C'),
+        ESC, ord('['), ord('C'),
+        ord('B'),   
+        ord('C'),                 // line 2 -> gone
+        ESC, ord('['), ord('D'),
+        ESC, ord('['), ord('B'),
+        ESC, ord('['), ord('B'),
+        ord('D'),                 // line 4 -> 2
+        ord('\r'), ord('\n'),
+        ord('\r'), ord('\n'),
+        ord('E'),
+        ord('F'),
+        ord('G'),
+      ]);
+      const dataSource = array.buffer;
+      let count = 0;
+      function Test() {
+        const screen = useAnsi(dataSource, {
+          modemSpeed: Infinity,
+          minHeight: 2,
+          maxHeight: 4,
+          minWidth: 2,
+          maxWidth: 4,
+        });
+        outputs.push(screen);
+        steps[count++].done();
+        return '';
+      }
+      const el = createElement(Test);
+      await render(el);
+      await steps[0];
+      const line2 = outputs[0].lines[1];
+      expect(line2[0].text).to.match(/^D\s+$/);
+      const line3 = outputs[0].lines[2];
+      expect(line3[0].text).to.match(/^\s+$/);
+      const line4 = outputs[0].lines[3];
+      expect(line4[0].text).to.match(/^EFG\s+$/);
     });
   })
   it('should reposition cursor', async function() {
@@ -481,7 +517,7 @@ describe('#useAnsi', function() {
         ESC, ord('['), ord('4'), ord('H'),
         ord('E'),
         ESC, ord('['), ord('4'), ord('0'), ord('4'), ord(';'), ord('4'), ord('0'), ord('4'), ord('H'),
-        ord('F'), ord('G')
+        ord('F'),
       ]);
       const dataSource = array.buffer;
       let count = 0;
@@ -504,7 +540,7 @@ describe('#useAnsi', function() {
       const line4 = outputs[0].lines[3];
       expect(line4[0].text).to.match(/^E\s+$/);
       const line24 = outputs[0].lines[23];
-      expect(line24[0].text).to.match(/^G\s+F$/);
+      expect(line24[0].text).to.match(/^\s+F$/);
     });
   })
   it('should clear contents after cursor', async function() {
@@ -1067,14 +1103,10 @@ describe('#useAnsi', function() {
       const dataSource = array.buffer;
       let count = 0;
       function Test() {
-        try {
-          const screen = useAnsi(dataSource, { modemSpeed: Infinity });
-          outputs.push(screen);
-          steps[count++].done();
-          return '';  
-        } catch (err) {
-          console.error(err);
-        }
+        const screen = useAnsi(dataSource, { modemSpeed: Infinity });
+        outputs.push(screen);
+        steps[count++].done();
+        return '';  
       }
       const el = createElement(Test);
       await render(el);
@@ -1091,14 +1123,10 @@ describe('#useAnsi', function() {
       const dataSource = array.buffer;
       let count = 0;
       function Test() {
-        try {
-          const screen = useAnsi(dataSource, { modemSpeed: Infinity });
-          outputs.push(screen);
-          steps[count++].done();
-          return ''; 
-        } catch (err) {
-          console.error(err);
-        }
+        const screen = useAnsi(dataSource, { modemSpeed: Infinity });
+        outputs.push(screen);
+        steps[count++].done();
+        return ''; 
       }
       const el = createElement(Test);
       await render(el);

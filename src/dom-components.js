@@ -16,18 +16,37 @@ export function AnsiText({ src, srcObject, palette = cgaPalette, ...options }) {
     const style = {
       whiteSpace: 'pre', 
       width: 'fit-content',
+      clear: 'both'
     };
     return createElement('div', { key: i, style }, spans);
   });
   return createElement('code', { className: 'AnsiText' }, children);
 }
 
+function getDataSource(src, srcObject) {
+  if (srcObject) {
+    return srcObject;
+  }
+  if (src) {
+    return (async () => {
+      const res = await fetch(src);
+      if (res.status !== 200) {
+        throw new Error(`HTTP ${res.status} - ${res.statusText}`);
+      }
+      return res.arrayBuffer();
+    })();
+  } else {
+    return (new Uint8Array(0)).buffer;
+  }
+}
+
+/* c8 ignore start */
 export function AnsiCanvas({ src, srcObject, palette = cgaPalette, font = {}, ...options }) {
   const { 
     family = 'monospace',
     style = 'normal', 
     weight = 'normal',
-    size = '12px',
+    size = '10pt',
     src: fontSrc,
   } = font;
   const canvasRef = useRef();
@@ -54,42 +73,29 @@ export function AnsiCanvas({ src, srcObject, palette = cgaPalette, font = {}, ..
     const { charWidth, charHeight, ascent, specifier } = metrics;
     canvas.width = width * charWidth;
     canvas.height = height * charHeight;
+    canvas.style.aspectRatio = `${width * 8} / ${height * 16}`;
     const cxt = canvas.getContext('2d');
-    let row = 0, col = 0;
+    cxt.font = specifier;    
+    let x = 0, y = ascent;
     for (const line of lines) {
       for (const { text, bgColor, fgColor, blink, transparent } of line) {
-        const x = col * charWidth, y = row * charHeight;
-        cxt.fillStyle = (transparent) ? 'rgba(0,0,0,0)' : palette[bgColor];
-        cxt.fillRect(x, y, charWidth * text.length, charHeight);
-        if (!transparent && (!blink || !blinked)) {
-          cxt.fillStyle = palette[fgColor];
-          cxt.font = specifier;
-          cxt.fillText(text, x, y + ascent);
+        const drawFG = !transparent && (!blink || !blinked);
+        for (let i = 0; i < text.length; i++) {
+          const s = text.charAt(i);
+          cxt.fillStyle = (transparent) ? 'rgba(0,0,0,0)' : palette[bgColor];
+          cxt.fillText('\u2588', x, y);
+          if (drawFG) {
+            cxt.fillStyle = palette[fgColor];
+            cxt.fillText(s, x, y);
+          }
+          x += charWidth;
         }
-        col += text.length;
       }
-      row++;
-      col = 0;
+      y += charHeight;
+      x = 0;
     }
   }, [ width, height, lines, blinked, palette, metrics ]);
   return createElement('canvas', { ref: canvasRef, className: 'AnsiCanvas' });
-}
-
-function getDataSource(src, srcObject) {
-  if (srcObject) {
-    return srcObject;
-  }
-  if (src) {
-    return (async () => {
-      const res = await fetch(src);
-      if (res.status !== 200) {
-        throw new Error(`HTTP ${res.status} - ${res.statusText}`);
-      }
-      return res.arrayBuffer();
-    })();
-  } else {
-    return (new Uint8Array(0)).buffer;
-  }
 }
 
 const fontMetrics = {};
@@ -130,6 +136,7 @@ async function loadFont(family, style, weight, src) {
   }
   return promise;
 }
+/* c8 ignore stop */
 
 const cgaPalette = [
   '#000000', '#aa0000', '#00aa00', '#aa5500', '#0000aa', '#aa00aa', '#00aaaa', '#aaaaaa',

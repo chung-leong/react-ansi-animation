@@ -21,9 +21,9 @@ describe('#AnsiText', function() {
         const segment = line[0];
         expect(segment).to.have.property('type', 'span');
         expect(segment.props.style).to.have.property('color', '#aaaaaa');
-        expect(segment.props.style).to.have.property('backgroundColor', '#000000');
+        expect(segment.props.style).to.have.property('backgroundColor', undefined);
         const text = segment.children[0];
-        expect(text).to.have.lengthOf(80);
+        expect(text).to.have.lengthOf(79);
         expect(text).to.match(/^\s+$/);
       }
     });
@@ -53,24 +53,33 @@ describe('#AnsiText', function() {
   it('should accept a buffer as srcObject', async function() {
     await withTestRenderer(async ({ render, toJSON }) => {
       const srcObject = await readFile(resolve('./ansi/LDA-GARFIELD.ANS'));
-      const el = createElement(AnsiText, { srcObject });
+      const el = createElement(AnsiText, { srcObject, maxHeight: 1024 });
       await render(el);
       const node = toJSON();
       expect(node).to.have.property('type', 'code');
       expect(node.props).to.eql({ className: 'AnsiText' });
-      expect(node.children).to.have.lengthOf(42);
+      expect(node.children).to.have.lengthOf(40);
+    });
+  })
+  it('should call onMetadata when file contains metadata', async function() {
+    await withTestRenderer(async ({ render, toJSON }) => {
+      const srcObject = await readFile(resolve('./ansi/LDA-GARFIELD.ANS'));
+      let metadata = null;
+      const el = createElement(AnsiText, { srcObject, modemSpeed: Infinity, onMetadata: (m) => metadata = m });
+      await render(el);
+      expect(metadata).to.be.an('array');
     });
   })
   it('should accept a promise as srcObject', async function() {
     await withTestRenderer(async ({ render, toJSON }) => {
       const srcObject = readFile(resolve('./ansi/LDA-GARFIELD.ANS'));
-      const el = createElement(AnsiText, { srcObject });
+      const el = createElement(AnsiText, { srcObject, maxHeight: 1024 });
       await render(el);
       await delay(50);
       const node = toJSON();
       expect(node).to.have.property('type', 'code');
       expect(node.props).to.eql({ className: 'AnsiText' });
-      expect(node.children).to.have.lengthOf(42);
+      expect(node.children).to.have.lengthOf(40);
     });
   })
   it('should display blinking text', async function() {
@@ -118,14 +127,14 @@ describe('#AnsiText', function() {
         };
       };
       try {
-        const el = createElement(AnsiText, { src: './ansi/LDA-GARFIELD.ANS' });
+        const el = createElement(AnsiText, { src: './ansi/LDA-GARFIELD.ANS', maxHeight: 1024 });
         await render(el);
         await delay(10);
         expect(called).to.be.true;
         const node = toJSON();
         expect(node).to.have.property('type', 'code');
         expect(node.props).to.eql({ className: 'AnsiText' });
-        expect(node.children).to.have.lengthOf(42); 
+        expect(node.children).to.have.lengthOf(40); 
       } finally {
         delete global.fetch;
       }
@@ -150,7 +159,7 @@ describe('#AnsiText', function() {
         const node = toJSON();
         expect(node).to.have.property('type', 'code');
         expect(node.props).to.eql({ className: 'AnsiText' });
-        expect(node.children).to.have.lengthOf(24); 
+        expect(node.children).to.have.lengthOf(22); 
         const segment = node.children[0].children[0];
         expect(segment).to.have.property('type', 'span');
         expect(segment.props.style).to.have.property('color', '#aaaaaa');
