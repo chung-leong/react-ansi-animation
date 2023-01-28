@@ -6,21 +6,17 @@ import { useAnsi } from './hooks.js';
 export function AnsiText({ src, srcObject, palette = cgaPalette, ...options }) {
   const dataSource = useMemo(() => getDataSource(src, srcObject), [ src, srcObject ]);
   const { lines, blinked } = useAnsi(dataSource, options);
-  const children = lines.map((segments, i) => {
-    const spans = segments.map(({ text, fgColor, bgColor, blink, transparent }, j) => {
+  const children = lines.map((segments) => {
+    const spans = segments.map(({ text, fgColor, bgColor, blink, transparent }) => {
       const props = {
         backgroundColor: (transparent) ? undefined : palette[bgColor],
         color: palette[(blink && blinked) ? bgColor : fgColor],
       };
       return createElement(Text, props, text);
     });
-    const style = {
-      whiteSpace: 'pre', 
-      width: 'fit-content',
-    };
-    return createElement(Text, { key: i }, spans);
+    return createElement(Text, {}, ...spans);
   });
-  return createElement(Fragment, {}, children);
+  return createElement(Fragment, {}, ...children);
 }
 
 function getDataSource(src, srcObject) {

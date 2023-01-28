@@ -5,22 +5,22 @@ import { useAnsi } from './hooks.js';
 export function AnsiText({ src, srcObject, palette = cgaPalette, ...options }) {
   const dataSource = useMemo(() => getDataSource(src, srcObject), [ src, srcObject ]);
   const { lines, blinked } = useAnsi(dataSource, options);
-  const children = lines.map((segments, i) => {
-    const spans = segments.map(({ text, fgColor, bgColor, blink, transparent }, j) => {
+  const children = lines.map((segments) => {
+    const spans = segments.map(({ text, fgColor, bgColor, blink, transparent }) => {
       const style = {
         backgroundColor: (transparent) ? undefined : palette[bgColor],
         color: palette[(blink && blinked) ? bgColor : fgColor],
       };
-      return createElement('span', { key: j, style }, text);
+      return createElement('span', { style }, text);
     });
     const style = {
       whiteSpace: 'pre', 
       width: 'fit-content',
       clear: 'both'
     };
-    return createElement('div', { key: i, style }, spans);
+    return createElement('div', { style }, ...spans);
   });
-  return createElement('code', { className: 'AnsiText' }, children);
+  return createElement('code', { className: 'AnsiText' }, ...children);
 }
 
 function getDataSource(src, srcObject) {
