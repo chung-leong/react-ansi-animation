@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { AnsiText, AnsiCanvas } from './react-ansi-animation';
+import { AnsiText, AnsiCanvas } from 'react-ansi-animation';
 import './css/App.css';
 
 const font = {
@@ -10,18 +10,23 @@ const font = {
 };
 
 export default function App() {
-  const [ modemSpeed, setModemSpeed ] = useState(112000);
+  const [ modemSpeed, setModemSpeed ] = useState(56000);
   const [ blinking, setBlinking ] = useState(false);
+  const [ scrolling, setScrolling ] = useState(true);
   const [ canvas, setCanvas ] = useState(false);
   const [ transparency, setTransparency ] = useState(false);
-  const [ filename, setFilename ] = useState('LDA-GARFIELD.ANS');
+  const [ filename, setFilename ] = useState('ABYSS1.ANS');
   const Ansi = (canvas) ? AnsiCanvas : AnsiText;
+  const maxHeight = (scrolling) ? 25 : 1024;
 
   const onSpeedChange = useCallback(({ target }) => {
     setModemSpeed(parseFloat(target.value));
   }, []);
   const onBlinkChange = useCallback(({ target }) => {
     setBlinking(target.checked);
+  }, []);
+  const onScrollChange = useCallback(({ target }) => {
+    setScrolling(target.checked);
   }, []);
   const onCanvasChange = useCallback(({ target }) => {
     setCanvas(target.checked);
@@ -69,13 +74,18 @@ export default function App() {
           <input type="checkbox" checked={blinking} onChange={onBlinkChange} />Blinking
         </label>
         <label>
+          <input type="checkbox" checked={scrolling} onChange={onScrollChange} />Scrolling
+        </label>
+        <label>
           <input type="checkbox" checked={canvas} onChange={onCanvasChange} />Canvas
         </label>
         <label>
-          <input type="checkbox" checked={transparency} onChange={onTransparencyChange} />Transparency
+          <input type="checkbox" checked={transparency} onChange={onTransparencyChange} />Transparent
         </label>
       </div>
-      <Ansi src={`/ansi/${filename}`} {...{ modemSpeed, blinking, transparency, font }} />
+      <div className="contents">
+        <Ansi src={`/ansi/${filename}`} {...{ modemSpeed, blinking, transparency, maxHeight, font }} />
+      </div>
       <div className="file-list" onClick={onFileClick}>
         <h4>Static:</h4>
         <ul>
@@ -107,6 +117,9 @@ export default function App() {
           <li>SUBACID.ANS</li>
           <li>UTOPIA86.ANS</li>
         </ul>
+      </div>
+      <div className="link">
+        <a href="https://github.com/chung-leong/react-ansi-animation#readme" target="_blank" rel="noreferrer">GitHub repo</a>
       </div>
     </div>
   );

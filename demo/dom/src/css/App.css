@@ -1,19 +1,29 @@
+* {
+  box-sizing: border-box;
+}
+
 body { 
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-direction: row;
+  justify-content: center;
   background-color: #202020;
   color: #ffffff;
+  height: 100vh;
+  width: 98vw;
+  margin: 0;
 }
 
 .App {
   font-family: monospace;
   display: flex;
+  position: relative;
   flex-direction: row;
   width: fit-content;
+  min-height: 100%;
+  padding: 0.5em 0.5em 0.5em 0.5em;
 }
 
-.App .controls, .App .file-list {
+.App .controls, .App .file-list {  
   overflow: hidden;
   margin: 1em 1em 1em 1em;
 }
@@ -52,7 +62,30 @@ body {
   color: #33ff33;
 }
 
+.App .link {
+  position: absolute;
+  bottom: 0.5em;
+}
+
+.App .contents {
+  min-width: 50em;
+  text-align: center;
+}
+
+.App .contents > * {
+  display: inline-block;
+} 
+
+.App .link a:link, .App .link a:visited {
+  color: #00ccff;
+  text-decoration: none;
+}
+
 @media screen and (max-width: 1024px) {
+  body {
+    display: block;
+  }
+
   .App {
     flex-direction: column;
   }
@@ -62,14 +95,20 @@ body {
   }
 
   .App .controls label {
+    margin-top: 0.2em;
     margin-bottom: 0;
-    margin-right: 1.5em;
+    margin-right: 1em;
     float: left;
-  } 
+  }
+  
+  .App .contents {
+    min-width: inherit;
+    min-height: 18em;
+  }
 
-  .App .file-list h4:first-child {
-    margin-top: inherit;
-  }   
+  .App .link {
+    position: inherit;
+  }
 }
 
 @media screen and (max-width: 640px) {
