@@ -1,10 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
-import { AnsiText, AnsiCanvas } from 'react-ansi-animation';
+import { AnsiText, AnsiCanvas } from './react-ansi-animation';
 import './css/App.css';
 
 const font = {
   family: 'Flexi IBM VGA',
-  size: '14pt',
+  size: '12pt',
   src: `url('/fonts/flexi-ibm-vga-true-437.woff2') format('woff2'),
         url('/fonts/flexi-ibm-vga-true-437.woff') format('woff')`,
 };
@@ -16,6 +16,8 @@ export default function App() {
   const [ canvas, setCanvas ] = useState(false);
   const [ transparency, setTransparency ] = useState(false);
   const [ filename, setFilename ] = useState('ABYSS1.ANS');
+  const [ initialStatus, setInitialStatus ] = useState({ position: 0, playing: true });
+  const [ currentStatus, setCurrentStatus ] = useState(initialStatus);
   const Ansi = (canvas) ? AnsiCanvas : AnsiText;
   const maxHeight = (scrolling) ? 25 : 1024;
 
@@ -37,8 +39,16 @@ export default function App() {
   const onFileClick = useCallback(({ target }) => {
     if (target.tagName === 'LI') {
       setFilename(target.firstChild.nodeValue);
+      setInitialStatus({ position: 0, playing: true });
       document.body.parentElement.scrollTop = 0;
     }
+  }, []);
+  const onPositionChange = useCallback(({ target }) => {
+    const position = parseFloat(target.value);
+    setInitialStatus({ position, playing: false });
+  }, []);
+  const onStatus = useCallback((status) => {
+    setCurrentStatus(status);
   }, []);
 
   useEffect(() => {
@@ -63,10 +73,11 @@ export default function App() {
             <option>28800</option>
             <option>33600</option>
             <option>56000</option>
-            <option>112000</option>
-            <option>256000</option>
-            <option>512000</option>
-            <option>1024000</option>
+            <option>115200</option>
+            <option>230400</option>
+            <option>460800</option>
+            <option>576000</option>
+            <option>921600</option>
             <option>Infinity</option>
           </select>
         </label>
@@ -84,7 +95,11 @@ export default function App() {
         </label>
       </div>
       <div className="contents">
-        <Ansi src={`/ansi/${filename}`} {...{ modemSpeed, blinking, transparency, maxHeight, font }} />
+        <Ansi src={`/ansi/${filename}`} {...{ modemSpeed, blinking, transparency, maxHeight, font, initialStatus, onStatus }} />
+        <div className={`playback-controls ${currentStatus.playing ? 'playing' : 'paused'}`}>
+          <input type="range" value={currentStatus.position} min="0" max="1" step="0.001" onChange={onPositionChange} />
+          <button>Play {'\u25b6'}</button>
+        </div>
       </div>
       <div className="file-list" onClick={onFileClick}>
         <h4>Static:</h4>
@@ -95,21 +110,32 @@ export default function App() {
           <li>COMICS14.ANS</li>
           <li>CT-DIE_HARD.ANS</li>
           <li>CT-PIXELS.ANS</li>
+          <li>DONATELO.ANS</li>
           <li>DW-FACES.ANS</li>
           <li>DW-HAPPY_HOLIDAYS.ANS</li>
+          <li>ED-NS.ANS</li>
+          <li>JET.ANS</li>
+          <li>FROSTBBS.ANS</li>
           <li>GAVEL30.ANS</li>
+          <li>GLOBE.ANS</li>
           <li>LDA-GARFIELD.ANS</li>
+          <li>THEQ.ANS</li>
           <li>US-UWU.ANS</li>
+          <li>WWANS54.ANS</li>
         </ul>
         <h4>Blinking:</h4>
         <ul>
           <li>CHRIST1.ANS</li>
+          <li>SMRFBONK.ANS</li>
           <li>US-CANDLES.ANS</li>          
           <li>UTOPIA20.ANS</li>
           <li>XMAS1.ANS</li>
         </ul>
         <h4>Animations:</h4>
         <ul>
+          <li>BCACID7.ANS</li>
+          <li>BOGACID1.ANS</li>
+          <li>CC-ICE1.ICE</li>
           <li>DT-GHETO.ANS</li>
           <li>JD-BUTT.ANS</li>
           <li>LM-OKC.ICE</li>

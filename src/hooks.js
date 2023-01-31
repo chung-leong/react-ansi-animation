@@ -1,7 +1,6 @@
-import { useRef } from 'react';
 import { useSequentialState, delay } from 'react-seq';
 
-export function useAnsi(dataSource, options = {}) {
+export function useAnsi(data, options = {}) {
   const {
     modemSpeed = 56000,
     frameDuration = 100,
@@ -12,40 +11,22 @@ export function useAnsi(dataSource, options = {}) {
     minHeight = 22,
     maxWidth = 80,
     maxHeight = 25,
-    onBeep,
-    onError,
-    onMetadata,
+    initialStatus = { position: 0, playing: true },
+    beep,
   } = options;
-  // put handlers inside a ref object so they don't cause rerunning of useSequentialState
-  const handlers = useRef();
-  handlers.current = { onBeep, onError, onMetadata };
-  return useSequentialState(async function*({ initial, signal }) {
+  return useSequentialState(async function*({ initial, mount, signal }) {
     // screen is at minimum dimensions and empty initially
-    let screen = {
+    let state = {
       width: minWidth, 
       height: minHeight,
       blinked: false, 
       lines: Array(minHeight).fill([ { text: ' '.repeat(minWidth), fgColor: 7, bgColor: 0, blink: false, transparent: true } ]),
       willBlink: false,
+      status: initialStatus,
+      metadata: null,
     };
-    // obtain data, should be an ArrayBuffer
-    let data, initialized;
-    if (typeof(dataSource.then) === 'function') {
-      // dataSource is a promise, make empty screen the initial state
-      initial(screen);
-      initialized = true;
-      try {
-        data = await dataSource;
-      } catch (err) {
-        // use text from error
-        data = toCP437(err.message);
-        handlers.current.onError?.(err);
-      }
-    } else {
-      // return initial state when we have real contents
-      initialized = false;
-      data = dataSource;
-    }
+    // data should be an ArrayBuffer
+    let initialized = false;
     let chars = new Uint8Array(data);
     let detectedWidth = 0, detectedHeight = 0;
     // process data in two passes: the first determines the maximum extent of the contents
@@ -55,8 +36,8 @@ export function useAnsi(dataSource, options = {}) {
       let width = detectedWidth, height = detectedHeight;
       let cursorX = 0, cursorY = 0, savedCursorX = 0, savedCursorY = 0, maxCursorX = 0, maxCursorY = 0;
       let bgColor = 0, fgColor = 7, bgColorBase = 0, fgColorBase = 7, bgBright = false, fgBright = false;
-      let buffer = null, blinked = false, escapeSeq = null, eof = false;
-      let metadata = null, metaString = '';
+      let buffer = null, blinked = false, willBlink = false;
+      let escapeSeq = null, eof = false, metadata = null, metaString = '';
       if (pass === 1) {
         // there's no need to do the first pass if the minimum dimensions match the maximum
         if (minWidth !== maxWidth || minHeight !== maxHeight) {
@@ -74,10 +55,43 @@ export function useAnsi(dataSource, options = {}) {
         metadata = [];
         // process data in a multiple chunks 
         const animationSpeed = modemSpeed / 10 / 1000;
-        const chunkLength = Math.floor(animationSpeed * frameDuration);
-        for (let i = 0; i < chars.length; i += chunkLength) {
-          if (i > 0) {
-            // wait for previous frame to end
+        const chunks = [];
+        let i = 0;
+        if (initialStatus.position > 0) {
+          // add initial chunk
+          i = Math.floor(initialStatus.position * chars.length);
+          chunks.push(chars.subarray(0, i));
+        }
+        if (initialStatus.playing) {
+          // add remaining chunks
+          const chunkLength = Math.floor(animationSpeed * frameDuration);
+          while (i < chars.length) {
+            chunks.push(chars.subarray(i, i + chunkLength));
+            i += chunkLength;
+          }
+        }
+        let processed = 0;
+        for (const [ index, chunk ] of chunks.entries()) {
+          chunk.map(processCharacter);
+          // time to output what's held in the screen buffer to the hook consumer,
+          // consolidating characters with identical attributes into segments 
+          const lines = scanBuffer();
+          // calculate status
+          processed += chunk.length;
+          const playing = (index !== chunks.length - 1);
+          const position = processed / chars.length;
+          const status = { position, playing };
+          state = { width, height, blinked, lines, willBlink, status, metadata };
+          if (!initialized) {
+            // initialize with real contents
+            initial(state);
+            initialized = true;
+            await mount();
+          } else {
+            yield state;
+          }
+          if (playing) {
+            // wait for frame to end
             await delay(frameDuration, { signal });
             if (blinking) {
               // update blink states
@@ -88,30 +102,16 @@ export function useAnsi(dataSource, options = {}) {
               }
             }
           }
-          chars.subarray(i, i + chunkLength).map(processCharacter);
-          // done with this chunk, time to output what's held in the screen buffer to the hook consumer,
-          // consolidating characters with identical attributes into segments 
-          screen = scanBuffer();
-          if (!initialized) {
-            // initialize with real contents
-            initial(screen);
-            initialized = true;
-          } else {
-            yield screen;
-          }
         }
-        if (metadata.length > 0) {
-          handlers.current.onMetadata?.(metadata);
-        }
-        data = chars = buffer = null;
+        chars = buffer = null;
 
         // go into an endless loop if there's blinking text (unless blinking is just truthy and not true)
-        if (screen.willBlink && blinking === true) {
+        if (state.willBlink && blinking === true) {
           // wait out the remaining blink period
           await delay(frameDuration * blinkFramesRemaining, { signal });
           for (;;) {
             blinked = !blinked;
-            yield { ...screen, blinked };
+            yield { ...state, blinked };
             await delay(blinkDuration, { signal });
           }
         }
@@ -187,7 +187,7 @@ export function useAnsi(dataSource, options = {}) {
           }
         } else if (!eof) {
           if (c === 0x07) {
-            handlers.current.onBeep?.();
+            beep?.();
           } else if (c === 0x08) {
             // backspace
             cursorX--;
@@ -408,7 +408,6 @@ export function useAnsi(dataSource, options = {}) {
         const bgColorMask = (blinking) ? 0x0700 : 0x0F00;
         const fgColorMask = 0xF000;
         const transparencyMask = (transparency) ? 0x0001 : 0x0000;
-        let willBlink = false;
         for (let row = 0; row < height; row++) {
           const segments = [];
           const first = row * width;
@@ -446,14 +445,14 @@ export function useAnsi(dataSource, options = {}) {
           }
           lines.push(line);
         }
-        return { width, height, lines, blinked, willBlink };
+        return lines;
       }
     } 
     if (!initialized) {
       // the data source was empty--initialize with empty screen
-      initial(screen);
+      initial(state);
     }
-  }, [ dataSource, modemSpeed, frameDuration, blinkDuration, blinking, minWidth, minHeight, maxWidth, maxHeight, transparency ]);
+  }, [ data, modemSpeed, frameDuration, blinkDuration, blinking, minWidth, minHeight, maxWidth, maxHeight, transparency, initialStatus, beep ]);
 }
 
 export function toCP437(msg) {

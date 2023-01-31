@@ -1,140 +1,174 @@
 import { useMemo, useRef, useEffect, createElement } from 'react';
 import { useSequentialState } from 'react-seq';
-import { useAnsi } from './hooks.js';
+import { useAnsi, toCP437 } from './hooks.js';
 
-export function AnsiText({ src, srcObject, palette = cgaPalette, ...options }) {
-  const dataSource = useMemo(() => getDataSource(src, srcObject), [ src, srcObject ]);
-  const { lines, blinked } = useAnsi(dataSource, options);
-  const children = lines.map((segments) => {
-    const spans = segments.map(({ text, fgColor, bgColor, blink, transparent }) => {
-      const style = {
-        backgroundColor: (transparent) ? undefined : palette[bgColor],
-        color: palette[(blink && blinked) ? bgColor : fgColor],
-      };
-      return createElement('span', { style }, text);
-    });
-    const style = {
-      whiteSpace: 'pre', 
-      width: 'fit-content',
-      clear: 'both'
-    };
-    return createElement('div', { style }, ...spans);
-  });
-  return createElement('code', { className: 'AnsiText' }, ...children);
+export function AnsiText(props) {
+  const { 
+    src, 
+    srcObject, 
+    palette = cgaPalette, 
+    onStatus,
+    onError,
+    onMetadata,
+    className = 'AnsiText',
+    ...options 
+  } = props;
+  const { data, error } = useData(src, srcObject);
+  const { lines, blinked, status, metadata } = useAnsi(data, options);
+  useEventHandling(onStatus, status, onMetadata, metadata, onError, error);
+  const children = createSpans(lines, blinked, options.blinking, palette);
+  return createElement('div', { className }, ...children);
 }
 
-function getDataSource(src, srcObject) {
-  if (srcObject) {
-    return srcObject;
-  }
-  if (src) {
-    return (async () => {
-      const res = await fetch(src);
-      if (res.status !== 200) {
-        throw new Error(`HTTP ${res.status} - ${res.statusText}`);
+function createSpans(lines, blinked, blinking, palette) {
+  return lines.map((segments) => {
+    const spans = segments.map(({ text, fgColor, bgColor, blink, transparent }) => {
+      const props = {};
+      if (Array.isArray(palette)) {
+        props.style = {
+          backgroundColor: (transparent) ? undefined : palette[bgColor],
+          color: palette[(blink && blinked) ? bgColor : fgColor],
+        };
+      } else {
+        const names = [];
+        names.push(`fgColor${fgColor}`)
+        if (!transparent) {
+          names.push(`bgColor${bgColor}`);
+        }
+        if (blink) {
+          if (blinking === true) {
+            // manual blinking
+            if (blink && blinked) {
+              names.push('blink');
+            }
+          } else {
+            // blinking through css
+            names.push('blinking');
+          }
+        }
+        props.className = names.join(' ');
       }
-      return res.arrayBuffer();
-    })();
-  } else {
-    return (new Uint8Array(0)).buffer;
-  }
+      return createElement('span', props, text);
+    });
+    const style = {
+      display: 'block',
+      whiteSpace: 'pre', 
+      width: 'fit-content',
+    };
+    return createElement('code', { style }, ...spans);
+  });  
+}
+
+function useData(src, srcObject) {
+  return useSequentialState(async function*({ initial, signal }) {
+    if (srcObject) {
+      initial({ data: srcObject, error: null });
+    } else if (!src) {
+      initial({ data: (new Uint8Array(0)).buffer, error: null });
+    } else {
+      initial({ data: null, error: null });
+      let data, error;
+      try {
+        const res = await fetch(src, { signal });
+        if (res.status !== 200) {
+          throw new Error(`${res.status} - ${res.statusText}`);
+        }
+        data = await res.arrayBuffer()        
+      } catch (err) {
+        data = toCP437(err.message);
+        error = err;
+      }
+      yield { data, error };
+    }
+  }, [ src, srcObject ]);
+}
+
+function useEventHandling(onStatus, status, onMetadata, metadata, onError, error) {
+  const handlerRef = useRef();
+  handlerRef.current = { onStatus, onMetadata, onError };
+  useEffect(() => { handlerRef.current.onStatus?.(status) }, [ status ]);
+  useEffect(() => { handlerRef.current.onMetadata?.(metadata) }, [ metadata ]);
+  useEffect(() => { handlerRef.current.onError?.(error) }, [ error ]);
 }
 
 /* c8 ignore start */
-export function AnsiCanvas({ src, srcObject, palette = cgaPalette, font = {}, ...options }) {
+export function AnsiCanvas(props) {
   const { 
-    family = 'monospace',
-    style = 'normal', 
-    weight = 'normal',
-    size = '10pt',
-    src: fontSrc,
-  } = font;
-  const canvasRef = useRef();
-  const dataSource = useMemo(() => getDataSource(src, srcObject), [ src, srcObject ]);
-  const { width, height, lines, blinked } = useAnsi(dataSource, options);
-  const metrics = useSequentialState(async function*({ initial, mount }) {
-    if (isFontLoaded(fontSrc)) {
-      initial(getFontMetrics(family, style, weight, size));     
-    } else {
-      await mount();
-      try {
-        await loadFont(family, style, weight, fontSrc);
-        yield getFontMetrics(family, style, weight, size);
-      } catch (err) {
-        yield getFontMetrics('monospace', style, weight, size);
-      }
-    }
-  }, [ family, style, weight, size, fontSrc ]);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!metrics || !canvas) {
-      return;
-    }
-    const { charWidth, charHeight, ascent, specifier } = metrics;
-    canvas.width = width * charWidth;
-    canvas.height = height * charHeight;
-    canvas.style.aspectRatio = `${width * 8} / ${height * 16}`;
-    const cxt = canvas.getContext('2d');
-    cxt.font = specifier;    
-    let x = 0, y = ascent;
-    for (const line of lines) {
-      for (const { text, bgColor, fgColor, blink, transparent } of line) {
-        const drawFG = !transparent && (!blink || !blinked);
-        for (let i = 0; i < text.length; i++) {
-          const s = text.charAt(i);
-          cxt.fillStyle = (transparent) ? 'rgba(0,0,0,0)' : palette[bgColor];
-          cxt.fillText('\u2588', x, y);
-          if (drawFG) {
-            cxt.fillStyle = palette[fgColor];
-            cxt.fillText(s, x, y);
+    src, 
+    srcObject, 
+    palette = cgaPalette, 
+    onStatus,
+    onError,
+    onMetadata,
+    className = 'AnsiCanvas',
+    ...options 
+  } = props;
+  const { data, error } = useData(src, srcObject);
+  const { lines, blinked, status, metadata } = useAnsi(data, options);
+  useEventHandling(onStatus, status, onMetadata, metadata, onError, error);
+  const children = useMemo(() => {
+    return createSpans(lines, blinked, options.blinking, palette);
+  }, [ lines, blinked, options.blinking, palette ]);
+  return useSequentialState(async function*({ initial, manageEvents, signal }) {
+    const [ on, eventual ] = manageEvents();
+    const ref = on.canvas.filter(n => n ?? undefined);
+    initial(createElement('canvas', { ref, className }, children));
+    // wait for canvas to show up
+    const { canvas } = await eventual.canvas;
+    for (;;) {
+      const { fontFamily, fontStyle, fontWeight, fontSize } = getComputedStyle(canvas);
+      const specifier = `${fontStyle} ${fontWeight} ${fontSize} ${fontFamily}`;
+      const { charWidth, charHeight, ascent } = getFontMetrics(specifier);
+      const height = canvas.childElementCount;
+      const width = [ ...canvas.firstChild.children ].reduce((len, el) => len + el.firstChild.nodeValue.length, 0);
+      canvas.width = width * charWidth;
+      canvas.height = height * charHeight;
+      const cxt = canvas.getContext('2d');
+      cxt.font = specifier;    
+      let x = 0, y = ascent;
+      for (const code of canvas.children) {
+        for (const span of code.children) {
+          const { color, backgroundColor } = getComputedStyle(span);
+          const drawBG = (backgroundColor !== 'transparent');
+          const drawFG = (color !== 'transparent');
+          const text = span.firstChild.nodeValue;
+          for (let i = 0; i < text.length; i++) {
+            if (drawBG) {
+              cxt.fillStyle = backgroundColor;
+              cxt.fillText('\u2588', x, y);
+            }
+            if (drawFG) {
+              cxt.fillStyle = color;
+              cxt.fillText(text.charAt(i), x, y);
+            }
+            x += charWidth;
           }
-          x += charWidth;
         }
+        y += charHeight;
+        x = 0;
       }
-      y += charHeight;
-      x = 0;
+      break;
     }
-  }, [ width, height, lines, blinked, palette, metrics ]);
-  return createElement('canvas', { ref: canvasRef, className: 'AnsiCanvas' });
+    yield createElement('canvas', { className });
+  }, [ children, className ]);
 }
 
 const fontMetrics = {};
 
-function getFontMetrics(family, style, weight, size) {
-  const specifier = `${style} ${weight} ${size} ${family}`;
+function getFontMetrics(specifier) {
   let metrics = fontMetrics[specifier];
   if (!metrics) {
     const canvas = document.createElement('CANVAS');
     const cxt = canvas.getContext('2d');
     cxt.font = specifier;
     const m = cxt.measureText('\u2588');
-    const ascent = m.actualBoundingBoxAscent;
-    const charHeight = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent;
-    const charWidth = m.actualBoundingBoxRight - m.actualBoundingBoxLeft;
-    metrics = fontMetrics[specifier] = { specifier, charWidth, charHeight, ascent };
+    metrics = fontMetrics[specifier] = { 
+      ascent: m.fontBoundingBoxAscent,
+      charHeight: m.fontBoundingBoxAscent + m.fontBoundingBoxDescent,
+      charWidth: m.width,
+    };
   }
   return metrics;
-}
-
-const fontPromises = {};
-const fontLoaded = {};
-
-function isFontLoaded(src) {
-  return !src || fontLoaded[src];
-}
-
-async function loadFont(family, style, weight, src) {
-  let promise = fontPromises[src];
-  if (!promise) {
-    promise = fontPromises[src] = (async () => {
-      const fontFace = new FontFace(family, src, { style, weight, display: 'block' });
-      await fontFace.load();
-      document.fonts.add(fontFace);
-      fontLoaded[src] = true;
-      return;
-    })();
-  }
-  return promise;
 }
 /* c8 ignore stop */
 
