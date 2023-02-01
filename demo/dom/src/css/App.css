@@ -94,6 +94,10 @@ body {
   padding: 0.2em 0.4em 0.2em 0.5em;
 }
 
+.App .playback-controls.playing button {
+  visibility: hidden;
+}
+
 .App .link a:link, .App .link a:visited {
   color: #00ccff;
   text-decoration: none;
@@ -127,7 +131,7 @@ body {
   .App .playback-controls button {
     font-size: 1.2em;
   }
-  
+   
   .App .link {
     position: inherit;
   }
