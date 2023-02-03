@@ -1,5 +1,7 @@
 import { useSequentialState, delay } from 'react-seq';
 
+const defaultStatus = { position: 0, playing: true };
+
 export function useAnsi(data, options = {}) {
   const {
     modemSpeed = 56000,
@@ -11,7 +13,7 @@ export function useAnsi(data, options = {}) {
     minHeight = 22,
     maxWidth = 80,
     maxHeight = 25,
-    initialStatus = { position: 0, playing: true },
+    initialStatus = defaultStatus,
     beep,
   } = options;
   return useSequentialState(async function*({ initial, mount, signal }) {

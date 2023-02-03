@@ -10,14 +10,13 @@ import {
 } from '../index.js';
 
 describe('#useAnsi', function() {
-  it('should update once when modem speed is infinite', async function() {
+  it('should yield blank screen when no data is provided', async function() {
     await withTestRenderer(async ({ render }) => {
       const steps = createSteps();
       const outputs = [];
-      const dataSource = readFile(resolve('./ansi/LDA-GARFIELD.ANS'));
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(null, {
           modemSpeed: Infinity,
           maxHeight: 1024,
         });
@@ -28,30 +27,23 @@ describe('#useAnsi', function() {
       const el = createElement(Test);
       await render(el);
       await steps[0];
-      await steps[1];
       expect(outputs[0]).to.be.an('object');
       expect(outputs[0]).to.have.property('width', 79);
       expect(outputs[0]).to.have.property('height', 22);
-      expect(outputs[1]).to.be.an('object');
-      expect(outputs[1]).to.have.property('width', 80);
-      expect(outputs[1]).to.have.property('height', 40);
-      expect(outputs[1]).to.have.property('blinked', false);
-      expect(outputs[1]).to.have.property('willBlink', false);
-      expect(outputs[1]).to.have.property('lines').that.has.lengthOf(40);
-      for (const line of outputs[1].lines) {
+      for (const line of outputs[0].lines) {
         const text = line.map(s => s.text).join('');
-        expect(text).to.have.lengthOf(80);
+        expect(text).to.match(/^\s+$/);
       }
     });
   })
-  it('should return the result immediately when data source is a blob', async function() {
+  it('should return the result immediately', async function() {
     await withTestRenderer(async ({ render }) => {
       const steps = createSteps();
       const outputs = [];
-      const dataSource = await readFile(resolve('./ansi/LDA-GARFIELD.ANS'));
+      const data = await readFile(resolve('./ansi/LDA-GARFIELD.ANS'));
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           maxHeight: 1024,
         });
@@ -78,10 +70,10 @@ describe('#useAnsi', function() {
     await withTestRenderer(async ({ render }) => {
       const steps = createSteps();
       const outputs = [];
-      const dataSource = await readFile(resolve('./ansi/US-CANDLES.ANS'));
+      const data = await readFile(resolve('./ansi/US-CANDLES.ANS'));
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           blinking: true,
           frameDuration: 10,
@@ -107,10 +99,10 @@ describe('#useAnsi', function() {
     await withTestRenderer(async ({ render }) => {
       const steps = createSteps();
       const outputs = [];
-      const dataSource = await readFile(resolve('./ansi/US-CANDLES.ANS'));
+      const data = await readFile(resolve('./ansi/US-CANDLES.ANS'));
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: 224000,
           blinking: true,
           frameDuration: 25,
@@ -133,10 +125,10 @@ describe('#useAnsi', function() {
     await withTestRenderer(async ({ render }) => {
       const steps = createSteps();
       const outputs = [];
-      const dataSource = await readFile(resolve('./ansi/US-CANDLES.ANS'));
+      const data = await readFile(resolve('./ansi/US-CANDLES.ANS'));
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           blinking: false,
           frameDuration: 10,
@@ -160,10 +152,10 @@ describe('#useAnsi', function() {
     await withTestRenderer(async ({ render }) => {
       const steps = createSteps();
       const outputs = [];
-      const dataSource = await readFile(resolve('./ansi/US-CANDLES.ANS'));
+      const data = await readFile(resolve('./ansi/US-CANDLES.ANS'));
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           blinking: 'manual',
           frameDuration: 10,
@@ -190,12 +182,12 @@ describe('#useAnsi', function() {
       const steps = createSteps();
       const outputs = [];
       const path = resolve('./ansi/LDA-GARFIELD.ANS');
-      const dataSource = await readFile(path);
+      const data = await readFile(path);
       const frameDuration = 100;
       const { size } = await stat(path);
       let count = 0;
       function Test({ modemSpeed }) {
-        const screen = useAnsi(dataSource, { modemSpeed, frameDuration });
+        const screen = useAnsi(data, { modemSpeed, frameDuration });
         outputs.push(screen);
         steps[count++].done();
         return '';
@@ -217,12 +209,12 @@ describe('#useAnsi', function() {
       const steps = createSteps();
       const outputs = [];
       const path = resolve('./ansi/LM-OKC.ICE');
-      const dataSource = await readFile(path);
+      const data = await readFile(path);
       const frameDuration = 5;
       const { size } = await stat(path);
       let count = 0;
       function Test({ modemSpeed }) {
-        const screen = useAnsi(dataSource, { modemSpeed, frameDuration });
+        const screen = useAnsi(data, { modemSpeed, frameDuration });
         outputs.push(screen);
         steps[count++].done();
         return '';
@@ -244,10 +236,10 @@ describe('#useAnsi', function() {
       const steps = createSteps();
       const outputs = [];
       const array = new Uint8Array(0);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity
         });
         outputs.push(screen);
@@ -267,10 +259,10 @@ describe('#useAnsi', function() {
       const steps = createSteps();
       const outputs = [];
       const array = new Uint8Array(Array.from('This is a test').map(ord));
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           transparency: true,
         });
@@ -294,10 +286,10 @@ describe('#useAnsi', function() {
       const steps = createSteps();
       const outputs = [];
       const array = new Uint8Array(0);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           minWidth: 40,
           maxWidth: 40,
@@ -328,10 +320,10 @@ describe('#useAnsi', function() {
         ord('A'),
         ESC, ord(']'), ord('A'),
       ]);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           minHeight: 2,
           maxHeight: 4,
@@ -362,10 +354,10 @@ describe('#useAnsi', function() {
         ESC, ord('['), ord('4'), ord('B'),
         ord('D'),
       ]);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           minHeight: 2,
           maxHeight: 4,
@@ -395,10 +387,10 @@ describe('#useAnsi', function() {
         ESC, ord('['), ord('9'), ord('D'),
         ord('C'),
       ]);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           minWidth: 2,
           maxWidth: 4,
@@ -432,10 +424,10 @@ describe('#useAnsi', function() {
         ord('F'),
         ord('G'),
       ]);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           minHeight: 2,
           maxHeight: 4,
@@ -477,10 +469,10 @@ describe('#useAnsi', function() {
         ord('F'),
         ord('G'),
       ]);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           minHeight: 2,
           maxHeight: 4,
@@ -519,10 +511,10 @@ describe('#useAnsi', function() {
         ESC, ord('['), ord('4'), ord('0'), ord('4'), ord(';'), ord('4'), ord('0'), ord('4'), ord('H'),
         ord('F'),
       ]);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           maxHeight: 24,
         });
@@ -554,10 +546,10 @@ describe('#useAnsi', function() {
           ESC, ord('['), ord('J'),
         ]
       ]);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           minWidth: 8,
           maxWidth: 8,
@@ -590,10 +582,10 @@ describe('#useAnsi', function() {
           ESC, ord('['), ord('1'), ord('J'),
         ]
       ]);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           minWidth: 8,
           maxWidth: 8,
@@ -626,10 +618,10 @@ describe('#useAnsi', function() {
           ESC, ord('['), ord('2'), ord('J'),
         ]
       ]);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           minWidth: 8,
           maxWidth: 8,
@@ -662,10 +654,10 @@ describe('#useAnsi', function() {
           ESC, ord('['), ord('K'),
         ]
       ]);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           minWidth: 8,
           maxWidth: 8,
@@ -698,10 +690,10 @@ describe('#useAnsi', function() {
           ESC, ord('['), ord('1'), ord('K'),
         ]
       ]);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           minWidth: 8,
           maxWidth: 8,
@@ -734,10 +726,10 @@ describe('#useAnsi', function() {
           ESC, ord('['), ord('2'), ord('K'),
         ]
       ]);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           minWidth: 8,
           maxWidth: 8,
@@ -772,10 +764,10 @@ describe('#useAnsi', function() {
           ESC, ord('['), ord('2'), ord('L'),
         ]
       ]);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           minWidth: 8,
           maxWidth: 8,
@@ -811,10 +803,10 @@ describe('#useAnsi', function() {
           ESC, ord('['), ord('2'), ord('M'),
         ]
       ]);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           minWidth: 8,
           maxWidth: 8,
@@ -847,10 +839,10 @@ describe('#useAnsi', function() {
           ESC, ord('['), ord('P'),
         ]
       ]);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           minWidth: 8,
           maxWidth: 8,
@@ -885,10 +877,10 @@ describe('#useAnsi', function() {
           ESC, ord('['), ord('9'), ord('X'),
         ]
       ]);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           minWidth: 8,
           maxWidth: 8,
@@ -920,10 +912,10 @@ describe('#useAnsi', function() {
           ESC, ord('['), ord('2'), ord('S'),
         ]
       ]);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           minWidth: 8,
           maxWidth: 8,
@@ -957,10 +949,10 @@ describe('#useAnsi', function() {
           ESC, ord('['), ord('2'), ord('T'),
         ]
       ]);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
           minWidth: 8,
           maxWidth: 8,
@@ -1001,10 +993,10 @@ describe('#useAnsi', function() {
         ESC, ord('['), ord('2'), ord('5'), ord('m'),
         ord('G'),
       ]);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, {
+        const screen = useAnsi(data, {
           modemSpeed: Infinity,
         });
         outputs.push(screen);
@@ -1038,10 +1030,10 @@ describe('#useAnsi', function() {
     await withTestRenderer(async ({ render }) => {
       const steps = createSteps();
       const array = new Uint8Array([ 7 ]);
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let called = false;
       function Test() {
-        const screen = useAnsi(dataSource, { modemSpeed: Infinity, onBeep: () => called = true });
+        const screen = useAnsi(data, { modemSpeed: Infinity, beep: () => called = true });
         steps[0].done();
         return '';
       }
@@ -1056,10 +1048,10 @@ describe('#useAnsi', function() {
       const steps = createSteps();
       const outputs = [];
       const array = new Uint8Array(Array.from('AA\tB\tCCCC\tD').map(ord));
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, { modemSpeed: Infinity });
+        const screen = useAnsi(data, { modemSpeed: Infinity });
         outputs.push(screen);
         steps[count++].done();
         return '';
@@ -1076,10 +1068,10 @@ describe('#useAnsi', function() {
       const steps = createSteps();
       const outputs = [];
       const array = new Uint8Array(Array.from('AA\nB\r\nCCCC').map(ord));
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, { modemSpeed: Infinity });
+        const screen = useAnsi(data, { modemSpeed: Infinity });
         outputs.push(screen);
         steps[count++].done();
         return '';
@@ -1100,10 +1092,10 @@ describe('#useAnsi', function() {
       const steps = createSteps();
       const outputs = [];
       const array = new Uint8Array(Array.from('\b\bAA\bB').map(ord));
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, { modemSpeed: Infinity });
+        const screen = useAnsi(data, { modemSpeed: Infinity });
         outputs.push(screen);
         steps[count++].done();
         return '';  
@@ -1120,10 +1112,10 @@ describe('#useAnsi', function() {
       const steps = createSteps();
       const outputs = [];
       const array = new Uint8Array(Array.from('BBBBBB\nBBBBBB\nBBBBBBBB\u000c').map(ord));
-      const dataSource = array.buffer;
+      const data = array.buffer;
       let count = 0;
       function Test() {
-        const screen = useAnsi(dataSource, { modemSpeed: Infinity });
+        const screen = useAnsi(data, { modemSpeed: Infinity });
         outputs.push(screen);
         steps[count++].done();
         return ''; 
@@ -1139,6 +1131,44 @@ describe('#useAnsi', function() {
       expect(line3[0].text).to.match(/^\s+$/);
     });
   })
+  it('should render from initial position provided', async function() {
+    await withTestRenderer(async ({ render }) => {
+      const steps = createSteps();
+      const outputs = [];
+      const data = await readFile(resolve('./ansi/LDA-GARFIELD.ANS'));
+      let count = 0;
+      function Test() {
+        const screen = useAnsi(data, {
+          modemSpeed: 56000,
+          maxHeight: 1024,
+          transparency: true,
+          initialStatus: { position: 0.5, playing: false },
+        });
+        outputs.push(screen);
+        steps[count++].done();
+        return '';
+      }
+      const el = createElement(Test);
+      await render(el);
+      await steps[0];
+      expect(outputs[0]).to.be.an('object');
+      expect(outputs[0]).to.have.property('width', 80);
+      expect(outputs[0]).to.have.property('height', 40);
+      expect(outputs[0]).to.have.property('blinked', false);
+      expect(outputs[0]).to.have.property('willBlink', false);
+      expect(outputs[0]).to.have.property('lines').that.has.lengthOf(40);
+      for (const line of outputs[0].lines) {
+        const text = line.map(s => s.text).join('');
+        expect(text).to.have.lengthOf(80);
+      }
+      const line20 = outputs[0].lines[19];
+      expect(line20.length).to.be.at.least(2);
+      const line25 = outputs[0].lines[24];
+      expect(line25.length).to.equal(1);
+      expect(outputs[0].status).to.have.property('playing', false);
+    });
+  })
+
 })
 
 function ord(s) {

@@ -31,14 +31,17 @@ export default function App() {
 
 * [`useAnsi`](./docs/useAnsi.md)
 
-## Employing an embedded font
+## Customizing text appearance
 
 AnsiText returns an HTML element with the following structure:
 
 ```html
   <div className="AnsiText">
-    <code>
-      <span>[ ...text ...]</span>
+    <code style="display: block; whiteSpace: pre; width: fit-content">
+      <span style="color: [color]; background-color: [color]">[ text ]</span>
+      <span />
+        ⋮
+      <span />
     </code>
     <code />
       ⋮
@@ -49,8 +52,9 @@ AnsiText returns an HTML element with the following structure:
 To change the font size, weight, and other attributes, simply add a rule to your CSS file:
 
 ```css
-div.AnsiText code {
+div.AnsiText {
   font-size: 24px;
   font-weight: bold;
 }
+```
 

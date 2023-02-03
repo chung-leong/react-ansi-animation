@@ -15,7 +15,7 @@ describe('DOM components', function() {
         const el = createElement(AnsiText, { minHeight: 4 });
         await render(el);
         const node = toJSON();
-        expect(node).to.have.property('type', 'code');
+        expect(node).to.have.property('type', 'div');
         expect(node.props).to.eql({ className: 'AnsiText' });
         expect(node.children).to.have.lengthOf(4);
         for (const { children: line } of node.children) {
@@ -29,26 +29,31 @@ describe('DOM components', function() {
         }
       });
     })
-    it('should output error message when data source throws', async function() {
+    it('should output error message when fetch throws', async function() {
       await withTestRenderer(async ({ render, toJSON }) => {
-        const srcObject = (async () => {
-          // checking handling of non-ASCII characters
-          throw new Error('Stało się coś strasznego');
-        })();
-        let error;
-        const el = createElement(AnsiText, { srcObject, minHeight: 4, onError: (err) => error = err });
-        await render(el);
-        const node = toJSON();
-        expect(node).to.have.property('type', 'code');
-        expect(node.props).to.eql({ className: 'AnsiText' });
-        expect(node.children).to.have.lengthOf(4);
-        const segment = node.children[0].children[0];
-        expect(segment).to.have.property('type', 'span');
-        expect(segment.props.style).to.have.property('color', '#aaaaaa');
-        expect(segment.props.style).to.have.property('backgroundColor', '#000000');
-        const text = segment.children[0];
-        expect(text).to.match(/^Sta\?o si\? co\? strasznego\s+/);
-        expect(error).to.be.an('error');
+        try {
+          global.fetch = () => {
+            // checking handling of non-ASCII characters
+            throw new Error('Stało się coś strasznego');
+          };
+          const src = 'http://whatever';
+          let error;
+          const el = createElement(AnsiText, { src, minHeight: 4, onError: (err) => error = err });
+          await render(el);
+          const node = toJSON();
+          expect(node).to.have.property('type', 'div');
+          expect(node.props).to.eql({ className: 'AnsiText' });
+          expect(node.children).to.have.lengthOf(4);
+          const segment = node.children[0].children[0];
+          expect(segment).to.have.property('type', 'span');
+          expect(segment.props.style).to.have.property('color', '#aaaaaa');
+          expect(segment.props.style).to.have.property('backgroundColor', '#000000');
+          const text = segment.children[0];
+          expect(text).to.match(/^Sta\?o si\? co\? strasznego\s+/);
+          expect(error).to.be.an('error');
+          } finally {
+          delete global.fetch;
+        }
       });
     })
     it('should accept a buffer as srcObject', async function() {
@@ -57,7 +62,7 @@ describe('DOM components', function() {
         const el = createElement(AnsiText, { srcObject, maxHeight: 1024 });
         await render(el);
         const node = toJSON();
-        expect(node).to.have.property('type', 'code');
+        expect(node).to.have.property('type', 'div');
         expect(node.props).to.eql({ className: 'AnsiText' });
         expect(node.children).to.have.lengthOf(40);
       });
@@ -78,9 +83,27 @@ describe('DOM components', function() {
         await render(el);
         await delay(50);
         const node = toJSON();
-        expect(node).to.have.property('type', 'code');
+        expect(node).to.have.property('type', 'div');
         expect(node.props).to.eql({ className: 'AnsiText' });
         expect(node.children).to.have.lengthOf(40);
+      });
+    })
+    it('should return status through onStatus', async function() {
+      await withTestRenderer(async ({ render, toJSON }) => {
+        const srcObject = await readFile(resolve('./ansi/LDA-GARFIELD.ANS'));
+        let status = null;
+        const el = createElement(AnsiText, { 
+          srcObject, 
+          maxHeight: 1024,
+          onStatus: s => status = s,
+        });
+        await render(el);
+        await delay(50);
+        const node = toJSON();
+        expect(node).to.have.property('type', 'div');
+        expect(node.props).to.eql({ className: 'AnsiText' });
+        expect(node.children).to.have.lengthOf(40);
+        expect(status.position).to.be.at.least(0).and.at.most(0.5);
       });
     })
     it('should display blinking text', async function() {
@@ -133,7 +156,7 @@ describe('DOM components', function() {
           await delay(10);
           expect(called).to.be.true;
           const node = toJSON();
-          expect(node).to.have.property('type', 'code');
+          expect(node).to.have.property('type', 'div');
           expect(node.props).to.eql({ className: 'AnsiText' });
           expect(node.children).to.have.lengthOf(40); 
         } finally {
@@ -155,10 +178,10 @@ describe('DOM components', function() {
         try {
           const el = createElement(AnsiText, { src: './ansi/LDA-GARFIELD.ANS' });
           await render(el);
-          await delay(10);
+          await delay(30);
           expect(called).to.be.true;
           const node = toJSON();
-          expect(node).to.have.property('type', 'code');
+          expect(node).to.have.property('type', 'div');
           expect(node.props).to.eql({ className: 'AnsiText' });
           expect(node.children).to.have.lengthOf(22); 
           const segment = node.children[0].children[0];
@@ -170,6 +193,74 @@ describe('DOM components', function() {
         } finally {
           delete global.fetch;
         }
+      });
+    })
+    it('should blink text using CSS when palette is set to css', async function() {
+      await withTestRenderer(async ({ render, toJSON }) => {
+        const srcObject = await readFile(resolve('./ansi/US-CANDLES.ANS'));
+        const el = createElement(AnsiText, { 
+          srcObject, 
+          blinking: true, 
+          modemSpeed: Infinity, 
+          blinkDuration: 100 ,
+          palette: 'css',
+        });
+        await render(el);
+        const node1 = toJSON();
+        const segment = node1.children[0].children[0];
+        expect(segment.props).to.not.have.property('style');
+        expect(segment.props).to.have.property('className').that.matches(/fgColor\d+ bgColor\d+/);
+        await delay(120);
+        let blinkingSegment = null;
+        for (const line of node1.children) {
+          for (const segment of line.children) {
+            if (/\bblink\b/.test(segment.props.className)) {
+              blinkingSegment = segment;
+            }
+          }
+        }
+        expect(blinkingSegment).to.be.null;
+        const node2 = toJSON();
+        expect(node2).to.not.eql(node1);
+        for (const line of node2.children) {
+          for (const segment of line.children) {
+            if (/\bblink\b/.test(segment.props.className)) {
+              blinkingSegment = segment;
+            }
+          }
+        }
+        expect(blinkingSegment).to.not.be.null;
+        expect(blinkingSegment.props.className).to.match(/fgColor\d+ bgColor\d+ blink\b/);
+      });
+    })
+    it('should use CSS for blinking when blinking is also set to css', async function() {
+      await withTestRenderer(async ({ render, toJSON }) => {
+        const srcObject = await readFile(resolve('./ansi/US-CANDLES.ANS'));
+        const el = createElement(AnsiText, { 
+          srcObject, 
+          blinking: 'css', 
+          modemSpeed: Infinity, 
+          blinkDuration: 100 ,
+          palette: 'css',
+        });
+        await render(el);
+        const node1 = toJSON();
+        const segment = node1.children[0].children[0];
+        expect(segment.props).to.not.have.property('style');
+        expect(segment.props).to.have.property('className').that.matches(/fgColor\d+ bgColor\d+/);
+        let blinkingSegment = null;
+        for (const line of node1.children) {
+          for (const segment of line.children) {
+            if (/\bblinking\b/.test(segment.props.className)) {
+              blinkingSegment = segment;
+            }
+          }
+        }
+        expect(blinkingSegment).to.not.be.null;
+        expect(blinkingSegment.props.className).to.match(/fgColor\d+ bgColor\d+ blinking\b/);
+        await delay(120);
+        const node2 = toJSON();
+        expect(node2).to.eql(node1);
       });
     })
   }) 

@@ -15,25 +15,27 @@ export function AnsiText(props) {
   } = props;
   // retrieve data
   const { data, error } = useSequentialState(async function*({ initial, signal }) {
+    let data = null, error = null, promise = null;
     if (srcObject) {
-      // return data immediately
-      initial({ data: srcObject, error: null });
-    } else if (!src) {
-      initial({ data: (new Uint8Array(0)).buffer, error: null });
+      if (typeof(srcObject.then) === 'function') {
+        promise = srcObject;
+      } else {
+        data = srcObject;
+      }
+    } else if (src) {
+      promise = fetchBuffer(src, { signal });
     } else {
-      initial({ data: null, error: null });
-      let data, error;
+      data = new Uint8Array(0).buffer;
+    }
+    initial({ data, error });
+    if (promise) {
       try {
-        const res = await fetch(src, { signal });
-        if (res.status !== 200) {
-          throw new Error(`HTTP ${res.status} - ${res.statusText}`);
-        }
-        data = await res.arrayBuffer()        
+        data = await promise;
       } catch (err) {
         data = toCP437(err.message);
         error = err;
       }
-      yield { data, error };
+      yield { data, error }; 
     }
   }, [ src, srcObject ]);
   // process data through hook
@@ -82,6 +84,14 @@ export function AnsiText(props) {
     return createElement('code', { style }, ...spans);
   });
   return createElement('div', { className }, ...children);
+}
+
+async function fetchBuffer(src, options) {
+  const res = await fetch(src, options);
+  if (res.status !== 200) {
+    throw new Error(`HTTP ${res.status} - ${res.statusText}`);
+  }
+  return await res.arrayBuffer();
 }
 
 const cgaPalette = [

@@ -33,33 +33,64 @@ describe('Ink components', function() {
       expect(m).to.have.lengthOf(39);
       expect(s).to.contain('lda');
     })
-    it('should accept a promise as data source', async function() {
+    it('should accept promise to data as well', async function() {
       const srcObject = readFile(resolve('./ansi/LDA-GARFIELD.ANS'));
       const el = createElement(AnsiText, { 
         srcObject, 
         modemSpeed: Infinity, 
         maxHeight: 1024 
       });
-      const { lastFrame, stdout } = render(el);
+      const { lastFrame } = render(el);
+      await delay(50);
+      const s = lastFrame();
+      const m = s.match(/\n/g);
+      expect(m).to.have.lengthOf(39);
+      expect(s).to.contain('lda');
+    })
+    it('should return metadata contained in file', async function() {
+      const srcObject = await readFile(resolve('./ansi/LDA-GARFIELD.ANS'));
+      let metadata = null;
+      const el = createElement(AnsiText, { 
+        srcObject, 
+        modemSpeed: Infinity, 
+        maxHeight: 1024,
+        onMetadata: m => metadata = m,
+      });
+      const { lastFrame } = render(el);
       await delay(10);
-      expect(stdout.frames).to.have.lengthOf(2);
+      expect(metadata).to.be.an('array');
+    })
+    it('should load ANSI text from file', async function() {
+      const src = resolve('./ansi/LDA-GARFIELD.ANS');
+      const el = createElement(AnsiText, { 
+        src, 
+        modemSpeed: Infinity, 
+        maxHeight: 1024 
+      });
+      const { lastFrame, stdout } = render(el);
+      await delay(50);
+      // initial frame, update on data retrieval, update on data drawn
+      expect(stdout.frames).to.have.lengthOf(3);
       const s = lastFrame();
       const m = s.match(/\n/g);
       expect(m).to.have.lengthOf(39);
       expect(s).to.contain('lda');
     })
     it('should render error message when file is missing', async function() {
-      const srcObject = readFile(resolve('./ansi/BOGUS.ANS'));
+      const src = resolve('./ansi/BOGUS.ANS');
+      let error;
       const el = createElement(AnsiText, { 
-        srcObject, 
+        src, 
         modemSpeed: Infinity, 
-        maxHeight: 1024 
+        maxHeight: 1024,
+        onError: err => error = err,
       });
       const { lastFrame, stdout } = render(el);
       await delay(10);
-      expect(stdout.frames).to.have.lengthOf(2);
+      expect(stdout.frames).to.have.lengthOf(3);
       const s = lastFrame();
       expect(s).to.contain('no such file or directory');
+      expect(error).to.be.an('error');
     })
     it('should handle ANSI text with blinking text', async function() {
       const srcObject = await readFile(resolve('./ansi/US-CANDLES.ANS'));
@@ -82,10 +113,12 @@ describe('Ink components', function() {
     })
     it('should be able to render an animation', async function() {
       const path = resolve('./ansi/LM-OKC.ICE');
+      const statuses = [];
       const el = createElement(AnsiText, { 
         src: path, 
         modemSpeed: 10000000, 
         frameDuration: 10, 
+        onStatus: s => statuses.push(s),
       });
       let previousCount = 0;
       const { stdout, unmount } = render(el);      
@@ -94,6 +127,7 @@ describe('Ink components', function() {
         await delay(20);
       }
       expect(previousCount).to.be.at.least(10);
+      expect(statuses.length).to.be.at.least(10);
       unmount();
     })
   })
