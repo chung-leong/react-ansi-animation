@@ -1,51 +1,20 @@
-import { useRef, useMemo, useEffect, createElement, Fragment } from 'react';
-import { useSequentialState } from 'react-seq';
-import { useAnsi, toCP437 } from './hooks.js';
+import { useMemo, createElement, Fragment } from 'react';
+import { useAnsi } from './hooks.js';
 import { readFile } from 'fs/promises';
 import { Text } from 'ink';
 
-export function AnsiText(props) {
-  const { 
-    src, 
-    srcObject, 
-    palette = cgaPalette, 
-    onStatus,
-    onError,
-    onMetadata,
-    ...options 
-  } = props;
-  // retrieve data
-  const { data, error } = useSequentialState(async function*({ initial }) {      
-    let data = null, error = null, promise = null;
+export function AnsiText({ src, srcObject, palette = cgaPalette, ...options }) {
+  // retrieve data if necessary
+  const data = useMemo(() => {
     if (srcObject) {
-      if (typeof(srcObject.then) === 'function') {
-        promise = srcObject;
-      } else {
-        data = srcObject;
-      }
+      return srcObject;
     } else if (src) {
-      promise = readFile(src);
+      return readFile(src);
     } else {
-      data = new Buffer.alloc(0);
-    }
-    initial({ data, error });
-    if (promise) {
-      try {
-        data = await promise;
-      } catch (err) {
-        data = toCP437(err.message);
-        error = err;
-      }
-      yield { data, error }; 
+      return new Buffer.alloc(0);
     }
   }, [ src, srcObject ]);
-  const { lines, blinked, status, metadata } = useAnsi(data, options);
-  // relay events
-  const handlerRef = useRef();
-  handlerRef.current = { onStatus, onMetadata, onError };
-  useEffect(() => { handlerRef.current.onStatus?.(status) }, [ status ]);
-  useEffect(() => { handlerRef.current.onMetadata?.(metadata) }, [ metadata ]);
-  useEffect(() => { handlerRef.current.onError?.(error) }, [ error ]);
+  const { lines, blinked } = useAnsi(data, options);
   // convert lines to Ink Text elements
   const children = lines.map((segments) => {
     const spans = segments.map(({ text, fgColor, bgColor, blink, transparent }) => {

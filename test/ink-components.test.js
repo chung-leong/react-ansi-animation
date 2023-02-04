@@ -69,8 +69,7 @@ describe('Ink components', function() {
       });
       const { lastFrame, stdout } = render(el);
       await delay(50);
-      // initial frame, update on data retrieval, update on data drawn
-      expect(stdout.frames).to.have.lengthOf(3);
+      expect(stdout.frames).to.have.lengthOf(2);
       const s = lastFrame();
       const m = s.match(/\n/g);
       expect(m).to.have.lengthOf(39);
@@ -87,7 +86,7 @@ describe('Ink components', function() {
       });
       const { lastFrame, stdout } = render(el);
       await delay(10);
-      expect(stdout.frames).to.have.lengthOf(3);
+      expect(stdout.frames).to.have.lengthOf(2);
       const s = lastFrame();
       expect(s).to.contain('no such file or directory');
       expect(error).to.be.an('error');

@@ -1,3 +1,4 @@
+import { useRef, useEffect, createElement } from 'react';
 import { useSequentialState, delay } from 'react-seq';
 
 const defaultStatus = { position: 0, playing: true };
@@ -14,9 +15,12 @@ export function useAnsi(data, options = {}) {
     maxWidth = 80,
     maxHeight = 25,
     initialStatus = defaultStatus,
+    onStatus,
+    onError,
+    onMetadata,
     beep,
   } = options;
-  return useSequentialState(async function*({ initial, mount, signal }) {
+  const state = useSequentialState(async function*({ initial, mount, signal }) {
     // screen is at minimum dimensions and empty initially
     let state = {
       width: minWidth, 
@@ -26,9 +30,20 @@ export function useAnsi(data, options = {}) {
       willBlink: false,
       status: initialStatus,
       metadata: null,
+      error: null,
     };
     // data should be an ArrayBuffer
-    let initialized = false;
+    let initialized = false, error = null;
+    try {
+      if (typeof(data?.then) === 'function') {
+        initial(state);
+        initialized = true;
+        data = await data;
+      }
+    } catch (err) {
+      data = toCP437(err.message);
+      error = err;
+    }
     let chars = new Uint8Array(data);
     let detectedWidth = 0, detectedHeight = 0;
     // process data in two passes: the first determines the maximum extent of the contents
@@ -83,7 +98,7 @@ export function useAnsi(data, options = {}) {
           const playing = (index !== chunks.length - 1);
           const position = processed / chars.length;
           const status = { position, playing };
-          state = { width, height, blinked, lines, willBlink, status, metadata };
+          state = { width, height, blinked, lines, willBlink, status, metadata, error };
           if (!initialized) {
             // initialize with real contents
             initial(state);
@@ -455,9 +470,26 @@ export function useAnsi(data, options = {}) {
       initial(state);
     }
   }, [ data, modemSpeed, frameDuration, blinkDuration, blinking, minWidth, minHeight, maxWidth, maxHeight, transparency, initialStatus, beep ]);
+  // saving handlers into a ref so we don't trigger useEffect when they're different
+  const handlerRef = useRef();
+  handlerRef.current = { onStatus, onMetadata, onError };
+  // relay events to event handlers
+  const { status, metadata, error } = state;
+  useEffect(() => { 
+    handlerRef.current.onStatus?.(status); 
+  }, [ status ]);
+  useEffect(() => { 
+    handlerRef.current.onMetadata?.(metadata); 
+  }, [ metadata ]);
+  useEffect(() => { 
+    if (error)  {
+      handlerRef.current.onError?.(error);
+    }
+  }, [ error ]);
+  return state;
 }
 
-export function toCP437(msg) {
+function toCP437(msg) {
   const array = new Uint8Array(msg.length);
   const oob = cp437Chars.indexOf('?');
   for (let i = 0; i < msg.length; i++) {
