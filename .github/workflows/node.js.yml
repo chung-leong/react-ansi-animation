@@ -24,6 +24,8 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+      env: 
+        FORCE_COLOR: 2
     - run: npm ci
     - run: npm test
   coverage:
@@ -40,5 +42,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+      env: 
+        FORCE_COLOR: 2
     - run: npm ci
     - run: npm run coverage
