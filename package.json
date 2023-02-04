@@ -44,6 +44,7 @@
     "ink-testing-library": "^2.1.0",
     "mocha": "^10.2.0",
     "react": "^18.2.0",
+    "react-seq": "^0.9.0",
     "react-test-renderer": "^18.2.0"
   }
 }
