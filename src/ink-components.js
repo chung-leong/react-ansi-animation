@@ -5,15 +5,8 @@ import { Text } from 'ink';
 
 export function AnsiText({ src, srcObject, palette = cgaPalette, ...options }) {
   // retrieve data if necessary
-  const data = useMemo(() => {
-    if (srcObject) {
-      return srcObject;
-    } else if (src) {
-      return readFile(src);
-    } else {
-      return new Buffer.alloc(0);
-    }
-  }, [ src, srcObject ]);
+  const data = useMemo(() => srcObject ?? fetchBuffer(src), [ src, srcObject ]);
+  // process data through hook
   const { lines, blinked } = useAnsi(data, options);
   // convert lines to Ink Text elements
   const children = lines.map((segments) => {
@@ -27,6 +20,12 @@ export function AnsiText({ src, srcObject, palette = cgaPalette, ...options }) {
     return createElement(Text, {}, ...spans);
   });
   return createElement(Fragment, {}, ...children);
+}
+
+async function fetchBuffer(src) {
+  if (src) {
+    return readFile(src);
+  }
 }
 
 const cgaPalette = [

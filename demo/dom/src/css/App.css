@@ -155,3 +155,8 @@ body {
     display: none;
   }
 }
+
+@font-face {
+  font-family: Flexi IBM VGA;
+  src: url('/fonts/flexi-ibm-vga-true-437.woff2') format('woff2') url('/fonts/flexi-ibm-vga-true-437.woff') format('woff');
+}

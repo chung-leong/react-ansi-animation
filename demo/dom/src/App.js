@@ -1,15 +1,17 @@
 import { useState, useEffect, startTransition } from 'react';
-import { AnsiText } from './react-ansi-animation';
+import { AnsiText, AnsiCanvas } from './react-ansi-animation';
 import './css/App.css';
 
 export default function App() {
   const [ modemSpeed, setModemSpeed ] = useState(56000);
   const [ blinking, setBlinking ] = useState(false);
   const [ scrolling, setScrolling ] = useState(true);
+  const [ canvas, setCanvas ] = useState(false);
   const [ transparency, setTransparency ] = useState(false);
   const [ filename, setFilename ] = useState('ABYSS1.ANS');
   const [ initialStatus, setInitialStatus ] = useState({ position: 0, playing: true });
   const [ currentStatus, setCurrentStatus ] = useState(initialStatus);
+  const Ansi = (canvas) ? AnsiCanvas : AnsiText;
   const maxHeight = (scrolling) ? 25 : 1024;
 
   const onSpeedChange = ({ target }) => {
@@ -23,6 +25,10 @@ export default function App() {
   };
   const onScrollChange = ({ target }) => {
     setScrolling(target.checked);
+    setInitialStatus(currentStatus);
+  };
+  const onCanvasChange = ({ target }) => {
+    setCanvas(target.checked);
     setInitialStatus(currentStatus);
   };
   const onTransparencyChange = ({ target }) => {
@@ -90,11 +96,14 @@ export default function App() {
           <input type="checkbox" checked={scrolling} onChange={onScrollChange} />Scrolling
         </label>
         <label>
+          <input type="checkbox" checked={canvas} onChange={onCanvasChange} />Canvas
+        </label>
+        <label>
           <input type="checkbox" checked={transparency} onChange={onTransparencyChange} />Transparent
         </label>
       </div>
       <div className="contents">
-        <AnsiText src={`/ansi/${filename}`} {...{ modemSpeed, blinking, transparency, maxHeight, initialStatus, onStatus }} />
+        <Ansi src={`/ansi/${filename}`} {...{ modemSpeed, blinking, transparency, maxHeight, initialStatus, onStatus }} />
         <div className={`playback-controls ${currentStatus.playing ? 'playing' : 'paused'}`}>
           <input type="range" value={currentStatus.position} min="0" max="1" step="0.001" onChange={onPositionChange} />
           <button onClick={onPlayClick}>Play {'\u25b6'}</button>

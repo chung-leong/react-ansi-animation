@@ -1,18 +1,9 @@
 import { useMemo, createElement } from 'react';
-import { useSequentialState } from 'react-seq';
 import { useAnsi } from './hooks.js';
 
 export function AnsiText({ src, srcObject, palette = cgaPalette, className = 'AnsiText', ...options }) {
   // retrieve data if necessary
-  const data = useMemo(() => {
-    if (srcObject) {
-      return srcObject;
-    } else if (src) {
-      return fetchBuffer(src);
-    } else {
-      return new Uint8Array(0).buffer;
-    }
-  }, [ src, srcObject ]);
+  const data = useMemo(() => srcObject ?? fetchBuffer(src), [ src, srcObject ]);
   // process data through hook
   const { lines, blinked } = useAnsi(data, options);
   // convert lines to spans
@@ -56,52 +47,41 @@ export function AnsiText({ src, srcObject, palette = cgaPalette, className = 'An
 }
 
 /* c8 ignore start */
-export function AnsiCanvas({ src, srcObject, palette = cgaPalette, font = {}, ...options }) {
-  const { 
-    family = 'monospace',
-    style = 'normal', 
-    weight = 'normal',
-    size = '10pt',
-    src: fontSrc,
-  } = font;
-  const specifier = `${style} ${weight} ${size} ${family}`;
+export function AnsiCanvas({ src, srcObject, palette = cgaPalette, className = 'AnsiCanvas', ...options }) {
   const canvasRef = useRef();
   // retrieve data if necessary
-  const data = useMemo(() => {
-    if (srcObject) {
-      return srcObject;
-    } else if (src) {
-      return fetchBuffer(src);
-    } else {
-      return new Uint8Array(0).buffer;
-    }
-  }, [ src, srcObject ]);
+  const data = useMemo(() => srcObject ?? fetchBuffer(src), [ src, srcObject ]);
   // process data through hook
   const { width, height, lines, blinked } = useAnsi(data, options);
-  const metrics = useSequentialState(async function*({ initial }) {
-    yield getFontMetrics(specifier);     
-  }, [ specifier ]);
+  // draw into canvas in useEffect hook
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!metrics || !canvas) {
+    if (!canvas) {
       return;
     }
-    const { charWidth, charHeight, ascent, specifier } = metrics;
+    // get style applicable to canvas
+    const { fontStyle, fontWeight, fontSize, fontFamily } = getComputedStyle(canvas);
+    const specifier = `${fontStyle} ${fontWeight} ${fontSize} ${fontFamily}`;
+    const { charWidth, charHeight, ascent } = getFontMetrics(specifier);
     canvas.width = width * charWidth;
     canvas.height = height * charHeight;
     const cxt = canvas.getContext('2d');
-    cxt.font = specifier;    
+    cxt.clearRect(0, 0, canvas.width, canvas.height);
+    cxt.font = specifier;
     let x = 0, y = ascent;
     for (const line of lines) {
       for (const { text, bgColor, fgColor, blink, transparent } of line) {
-        const drawFG = !transparent && (!blink || !blinked);
         for (let i = 0; i < text.length; i++) {
-          const s = text.charAt(i);
-          cxt.fillStyle = (transparent) ? 'rgba(0,0,0,0)' : palette[bgColor];
-          cxt.fillText('\u2588', x, y);
-          if (drawFG) {
-            cxt.fillStyle = palette[fgColor];
-            cxt.fillText(s, x, y);
+          if (!transparent) {
+            // fill background with block character for more consistent appearance
+            // if the block character doesn't quote fill the cell, then the gaps between
+            // cells should appear everywhere
+            cxt.fillStyle = palette[bgColor];
+            cxt.fillText('\u2588', x, y);
+            if (!blink || !blinked) {
+              cxt.fillStyle = palette[fgColor];
+              cxt.fillText(text.charAt(i), x, y);
+            }
           }
           x += charWidth;
         }
@@ -109,8 +89,8 @@ export function AnsiCanvas({ src, srcObject, palette = cgaPalette, font = {}, ..
       y += charHeight;
       x = 0;
     }
-  }, [ width, height, lines, blinked, palette, metrics ]);
-  return createElement('canvas', { ref: canvasRef, className: 'AnsiCanvas' });
+  }, [ width, height, lines, blinked, palette ]);
+  return createElement('canvas', { ref: canvasRef, className });
 }
 
 const fontMetrics = {};
@@ -125,18 +105,20 @@ function getFontMetrics(specifier) {
     const ascent = m.fontBoundingBoxAscent;
     const charHeight = m.fontBoundingBoxAscent + m.fontBoundingBoxDescent;
     const charWidth = m.fontBoundingBoxRight - m.fontBoundingBoxLeft;
-    metrics = fontMetrics[specifier] = { specifier, charWidth, charHeight, ascent };
+    metrics = fontMetrics[specifier] = { charWidth, charHeight, ascent };
   }
   return metrics;
 }
 /* c8 ignore stop */
 
 async function fetchBuffer(src, options) {
-  const res = await fetch(src, options);
-  if (res.status !== 200) {
-    throw new Error(`HTTP ${res.status} - ${res.statusText}`);
+  if (src) {
+    const res = await fetch(src, options);
+    if (res.status !== 200) {
+      throw new Error(`HTTP ${res.status} - ${res.statusText}`);
+    }
+    return await res.arrayBuffer(); 
   }
-  return await res.arrayBuffer();
 }
 
 const cgaPalette = [
