@@ -15,8 +15,8 @@ describe('DOM components', function() {
         const el = createElement(AnsiText, { minHeight: 4 });
         await render(el);
         const node = toJSON();
-        expect(node).to.have.property('type', 'div');
-        expect(node.props).to.eql({ className: 'AnsiText' });
+        expect(node).to.have.property('type', 'code');
+        expect(node.props).to.have.property('className', 'AnsiText');
         expect(node.children).to.have.lengthOf(4);
         for (const { children: line } of node.children) {
           const segment = line[0];
@@ -41,8 +41,8 @@ describe('DOM components', function() {
           const el = createElement(AnsiText, { src, minHeight: 4, onError: (err) => error = err });
           await render(el);
           const node = toJSON();
-          expect(node).to.have.property('type', 'div');
-          expect(node.props).to.eql({ className: 'AnsiText' });
+          expect(node).to.have.property('type', 'code');
+          expect(node.props).to.have.property('className', 'AnsiText');
           expect(node.children).to.have.lengthOf(4);
           const segment = node.children[0].children[0];
           expect(segment).to.have.property('type', 'span');
@@ -62,8 +62,8 @@ describe('DOM components', function() {
         const el = createElement(AnsiText, { srcObject, maxHeight: 1024 });
         await render(el);
         const node = toJSON();
-        expect(node).to.have.property('type', 'div');
-        expect(node.props).to.eql({ className: 'AnsiText' });
+        expect(node).to.have.property('type', 'code');
+        expect(node.props).to.have.property('className', 'AnsiText');
         expect(node.children).to.have.lengthOf(40);
       });
     })
@@ -83,8 +83,8 @@ describe('DOM components', function() {
         await render(el);
         await delay(50);
         const node = toJSON();
-        expect(node).to.have.property('type', 'div');
-        expect(node.props).to.eql({ className: 'AnsiText' });
+        expect(node).to.have.property('type', 'code');
+        expect(node.props).to.have.property('className', 'AnsiText');
         expect(node.children).to.have.lengthOf(40);
       });
     })
@@ -100,8 +100,8 @@ describe('DOM components', function() {
         await render(el);
         await delay(50);
         const node = toJSON();
-        expect(node).to.have.property('type', 'div');
-        expect(node.props).to.eql({ className: 'AnsiText' });
+        expect(node).to.have.property('type', 'code');
+        expect(node.props).to.have.property('className', 'AnsiText');
         expect(node.children).to.have.lengthOf(40);
         expect(status.position).to.be.at.least(0).and.at.most(0.5);
       });
@@ -156,8 +156,8 @@ describe('DOM components', function() {
           await delay(10);
           expect(called).to.be.true;
           const node = toJSON();
-          expect(node).to.have.property('type', 'div');
-          expect(node.props).to.eql({ className: 'AnsiText' });
+          expect(node).to.have.property('type', 'code');
+          expect(node.props).to.have.property('className', 'AnsiText');
           expect(node.children).to.have.lengthOf(40); 
         } finally {
           delete global.fetch;
@@ -181,8 +181,8 @@ describe('DOM components', function() {
           await delay(30);
           expect(called).to.be.true;
           const node = toJSON();
-          expect(node).to.have.property('type', 'div');
-          expect(node.props).to.eql({ className: 'AnsiText' });
+          expect(node).to.have.property('type', 'code');
+          expect(node.props).to.have.property('className', 'AnsiText');
           expect(node.children).to.have.lengthOf(22); 
           const segment = node.children[0].children[0];
           expect(segment).to.have.property('type', 'span');

@@ -142,6 +142,7 @@ body {
     font-size: 2vw;
   }
   .App .AnsiCanvas {
+    font-size: 8pt;
     width: 100%;
   }
 }
@@ -154,9 +155,4 @@ body {
   .App .controls, .App .file-list {
     display: none;
   }
-}
-
-@font-face {
-  font-family: Flexi IBM VGA;
-  src: url('/fonts/flexi-ibm-vga-true-437.woff2') format('woff2') url('/fonts/flexi-ibm-vga-true-437.woff') format('woff');
 }

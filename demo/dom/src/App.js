@@ -6,7 +6,7 @@ export default function App() {
   const [ modemSpeed, setModemSpeed ] = useState(56000);
   const [ blinking, setBlinking ] = useState(false);
   const [ scrolling, setScrolling ] = useState(true);
-  const [ canvas, setCanvas ] = useState(false);
+  const [ canvas, setCanvas ] = useState(true);
   const [ transparency, setTransparency ] = useState(false);
   const [ filename, setFilename ] = useState('ABYSS1.ANS');
   const [ initialStatus, setInitialStatus ] = useState({ position: 0, playing: true });

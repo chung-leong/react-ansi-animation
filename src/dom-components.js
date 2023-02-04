@@ -1,5 +1,6 @@
-import { useMemo, createElement } from 'react';
+import { useMemo, useRef, useEffect, createElement } from 'react';
 import { useAnsi } from './hooks.js';
+import { cgaPalette } from './dos-environment.js';
 
 export function AnsiText({ src, srcObject, palette = cgaPalette, className = 'AnsiText', ...options }) {
   // retrieve data if necessary
@@ -36,14 +37,14 @@ export function AnsiText({ src, srcObject, palette = cgaPalette, className = 'An
       }
       return createElement('span', props, text);
     });
-    const style = {
-      display: 'block',
-      whiteSpace: 'pre', 
-      width: 'fit-content',
-    };
-    return createElement('code', { style }, ...spans);
+    return createElement('div', {}, ...spans);
   });
-  return createElement('div', { className }, ...children);
+  const style = {
+    display: 'block',
+    whiteSpace: 'pre', 
+    width: 'fit-content',
+  };
+  return createElement('code', { className, style }, ...children);
 }
 
 /* c8 ignore start */
@@ -59,38 +60,67 @@ export function AnsiCanvas({ src, srcObject, palette = cgaPalette, className = '
     if (!canvas) {
       return;
     }
-    // get style applicable to canvas
-    const { fontStyle, fontWeight, fontSize, fontFamily } = getComputedStyle(canvas);
-    const specifier = `${fontStyle} ${fontWeight} ${fontSize} ${fontFamily}`;
-    const { charWidth, charHeight, ascent } = getFontMetrics(specifier);
-    canvas.width = width * charWidth;
-    canvas.height = height * charHeight;
-    const cxt = canvas.getContext('2d');
-    cxt.clearRect(0, 0, canvas.width, canvas.height);
-    cxt.font = specifier;
-    let x = 0, y = ascent;
-    for (const line of lines) {
-      for (const { text, bgColor, fgColor, blink, transparent } of line) {
-        for (let i = 0; i < text.length; i++) {
-          if (!transparent) {
-            // fill background with block character for more consistent appearance
-            // if the block character doesn't quote fill the cell, then the gaps between
-            // cells should appear everywhere
-            cxt.fillStyle = palette[bgColor];
-            cxt.fillText('\u2588', x, y);
-            if (!blink || !blinked) {
-              cxt.fillStyle = palette[fgColor];
-              cxt.fillText(text.charAt(i), x, y);
-            }
-          }
-          x += charWidth;
+    // get font applicable to canvas
+    let specifier = getFontSpecifier(canvas);
+    if (document.fonts.check(specifier)) {
+      draw();
+      // observe resizing of element so any font changes get applied
+      const observer = new ResizeObserver(() => {
+        const newSpecifier = getFontSpecifier(canvas);        
+        if (newSpecifier !== specifier) {
+          specifier = newSpecifier;
+          draw();
         }
+      });
+      observer.observe(canvas);
+      return () => observer.disconnect();
+    } else {
+      // draw when the font has been loaded
+      let cancelled = false;
+      document.fonts.load(specifier).then(() => {
+        if (!cancelled) {
+          draw();
+        }
+      });
+      return () => cancelled = true;
+    }
+
+    function draw() {
+      const { charWidth, charHeight, ascent } = getFontMetrics(specifier);
+      canvas.width = width * charWidth;
+      canvas.height = height * charHeight;
+      const cxt = canvas.getContext('2d');
+      cxt.clearRect(0, 0, canvas.width, canvas.height);
+      cxt.font = specifier;
+      let x = 0, y = ascent;
+      for (const line of lines) {
+        for (const { text, bgColor, fgColor, blink, transparent } of line) {
+          for (let i = 0; i < text.length; i++) {
+            if (!transparent) {
+              // fill background with block character for more consistent appearance
+              // if the block character doesn't quote fill the cell, then the gaps between
+              // cells should appear everywhere
+              cxt.fillStyle = palette[bgColor];
+              cxt.fillText('\u2588', x, y);
+              if (!blink || !blinked) {
+                cxt.fillStyle = palette[fgColor];
+                cxt.fillText(text.charAt(i), x, y);
+              }
+            }
+            x += charWidth;
+          }
+        }
+        y += charHeight;
+        x = 0;
       }
-      y += charHeight;
-      x = 0;
     }
   }, [ width, height, lines, blinked, palette ]);
   return createElement('canvas', { ref: canvasRef, className });
+}
+
+function getFontSpecifier(node) {
+  const { fontStyle, fontWeight, fontSize, fontFamily } = getComputedStyle(node);
+  return `${fontStyle} ${fontWeight} ${fontSize} ${fontFamily}`; 
 }
 
 const fontMetrics = {};
@@ -104,7 +134,7 @@ function getFontMetrics(specifier) {
     const m = cxt.measureText('\u2588');
     const ascent = m.fontBoundingBoxAscent;
     const charHeight = m.fontBoundingBoxAscent + m.fontBoundingBoxDescent;
-    const charWidth = m.fontBoundingBoxRight - m.fontBoundingBoxLeft;
+    const charWidth = m.width;
     metrics = fontMetrics[specifier] = { charWidth, charHeight, ascent };
   }
   return metrics;
@@ -121,7 +151,3 @@ async function fetchBuffer(src, options) {
   }
 }
 
-const cgaPalette = [
-  '#000000', '#aa0000', '#00aa00', '#aa5500', '#0000aa', '#aa00aa', '#00aaaa', '#aaaaaa',
-  '#555555', '#ff5555', '#55ff55', '#ffff55', '#5555ff', '#ff55ff', '#55ffff', '#ffffff',
-];
