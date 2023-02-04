@@ -24,10 +24,8 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-      env: 
-        FORCE_COLOR: 2
     - run: npm ci
-    - run: npm test
+    - run: FORCE_COLOR=2 npm test
   coverage:
     runs-on: ubuntu-latest
     strategy:
@@ -41,8 +39,6 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-      env: 
-        FORCE_COLOR: 2
+        cache: 'npm'       
     - run: npm ci
-    - run: npm run coverage
+    - run: FORCE_COLOR=2 npm run coverage

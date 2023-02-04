@@ -101,14 +101,18 @@ describe('Ink components', function() {
         blinking: true,
       });
       const { lastFrame, stdout, unmount } = render(el);
-      const s1 = lastFrame();
-      const m = s1.match(/\n/g);
-      expect(m).to.have.lengthOf(24);
-      await delay(70);
-      expect(stdout.frames).to.have.lengthOf(2);
-      const s2 = lastFrame();
-      expect(s2).to.not.equal(s1);
-      unmount();
+      try {
+        const s1 = lastFrame();
+        const m = s1.match(/\n/g);
+        expect(m).to.have.lengthOf(24);
+        await delay(70);
+        expect(stdout.frames).to.have.lengthOf(2);
+        const s2 = lastFrame();
+        expect(s2).to.not.equal(s1); 
+      } finally {
+        unmount();
+
+      }
     })
     it('should be able to render an animation', async function() {
       const path = resolve('./ansi/LM-OKC.ICE');
@@ -121,13 +125,16 @@ describe('Ink components', function() {
       });
       let previousCount = 0;
       const { stdout, unmount } = render(el);      
-      while (previousCount !== stdout.frames.length) {
-        previousCount = stdout.frames.length;
-        await delay(20);
+      try {
+        while (previousCount !== stdout.frames.length) {
+          previousCount = stdout.frames.length;
+          await delay(20);
+        }
+        expect(previousCount).to.be.at.least(10);
+        expect(statuses.length).to.be.at.least(10);
+      } finally {
+        unmount();
       }
-      expect(previousCount).to.be.at.least(10);
-      expect(statuses.length).to.be.at.least(10);
-      unmount();
     })
   })
 })
