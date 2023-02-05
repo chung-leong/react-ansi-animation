@@ -6,7 +6,7 @@ export default function App() {
   const [ modemSpeed, setModemSpeed ] = useState(56000);
   const [ blinking, setBlinking ] = useState(false);
   const [ scrolling, setScrolling ] = useState(true);
-  const [ canvas, setCanvas ] = useState(true);
+  const [ canvas, setCanvas ] = useState(false);
   const [ transparency, setTransparency ] = useState(false);
   const [ filename, setFilename ] = useState('ABYSS1.ANS');
   const [ initialStatus, setInitialStatus ] = useState({ position: 0, playing: true });
@@ -15,13 +15,12 @@ export default function App() {
   const maxHeight = (scrolling) ? 25 : 1024;
 
   const onSpeedChange = ({ target }) => {
-    setInitialStatus(currentStatus);
     setModemSpeed(parseFloat(target.value));
+    setInitialStatus(currentStatus);
   };
   const onBlinkChange = ({ target }) => {
     setBlinking(target.checked);
     setInitialStatus(currentStatus);
-    console.log(currentStatus);
   };
   const onScrollChange = ({ target }) => {
     setScrolling(target.checked);
