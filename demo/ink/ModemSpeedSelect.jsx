@@ -1,4 +1,4 @@
-import { useRoute } from './array-router/index.js';
+import { useRoute } from 'array-router';
 import SelectBox from './SelectBox.jsx';
 
 export default function ModemSpeedSelect() {

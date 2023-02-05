@@ -1,5 +1,5 @@
-import { useRoute } from './array-router/index.js';
-import SelectBox from "./BooleanSelectBox.jsx";
+import { useRoute } from 'array-router';
+import SelectBox from "./SelectBox.jsx";
 
 export default function BlinkingSelect() {
   const [ parts, options ] = useRoute();

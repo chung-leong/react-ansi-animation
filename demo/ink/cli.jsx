@@ -7,7 +7,7 @@ import parse from 'shell-quote/parse.js';
 import quote from 'shell-quote/quote.js';
 import { createContext } from 'react';
 import { useSequential } from 'react-seq';
-import { useSequentialRouter } from './array-router/index.js';
+import { useSequentialRouter } from 'array-router';
 import main from './main.jsx';
 
 const name = `ink-ansi`;

@@ -1,6 +1,6 @@
-import { useRoute } from './array-router/index.js';
+import { useRoute } from 'array-router';
 import { useFocus, useInput, Box } from 'ink';
-import { AnsiText } from './react-ansi-animation/ink.js';
+import { AnsiText } from 'react-ansi-animation/ink';
 
 export default function AnsiDisplay({ src, onExit, onEnd }) {
   const { isFocused } = useFocus({ id: 'main', autoFocus: true });

@@ -2,7 +2,7 @@ import { readdir, open } from 'fs/promises';
 import { basename, normalize } from 'path';
 import { useProgressive } from 'react-seq';
 import { useFocus, Box, Text } from 'ink';
-import MulticolumnSelectInput from './MulticolumnSelectInput.jsx';
+import MulticolumnSelectInput from 'ink-multicolumn-select-input';
 import InkSpinner from 'ink-spinner'; const { default: Spinner } = InkSpinner;
 
 export default function FileList({ folder = '.', selected = '', onFileSelect, onFolderSelect }) {

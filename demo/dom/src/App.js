@@ -1,5 +1,5 @@
 import { useState, useEffect, startTransition } from 'react';
-import { AnsiText, AnsiCanvas } from './react-ansi-animation';
+import { AnsiText, AnsiCanvas } from 'react-ansi-animation';
 import './css/App.css';
 
 export default function App() {
