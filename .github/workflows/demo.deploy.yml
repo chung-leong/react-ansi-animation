@@ -1,29 +1,42 @@
-# This is a basic workflow to help you get started with Actions
-
+# Workflow for deploying demo to GitHub Pages
 name: Demo deployment
 
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
-  build:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
       - name: Use Node.js 18.x
         uses: actions/setup-node@v3
         with:
           node-version: 18.x
-      - run: cd ./demo/dom; npm ci
-      - run: cd ./demo/dom; npm run build 
-      - name: Deploy files
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Install dependencies
+        run: cd ./demo/dom; npm ci
+      - name: Create production build
+        run: cd ./demo/dom; npm run build 
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./demo/dom/build
+          path: './demo/dom/build'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
