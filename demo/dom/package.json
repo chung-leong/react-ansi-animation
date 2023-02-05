@@ -1,5 +1,6 @@
 {
   "name": "react-ansi-animation-demo",
+  "homepage": "https://chung-leong.github.io/react-ansi-animation",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
