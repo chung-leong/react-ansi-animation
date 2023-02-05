@@ -18,8 +18,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18.x
-      - run: npm ci
-      - run: cd ./demo/dom; npm run build
+      - run: cd ./demo/dom; npm ci
+      - run: npm run build 
       - name: Deploy files
         uses: peaceiris/actions-gh-pages@v3
         with:
