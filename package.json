@@ -1,6 +1,6 @@
 {
   "name": "react-ansi-animation",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "React component for displaying ANSI animation",
   "main": "index.js",
   "type": "module",
