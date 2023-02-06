@@ -17,10 +17,12 @@ $: ink-ansi-anmation
 
 ink-ansi-anmation will look for ANSI files in the current working directory and display them in a list. 
 Press `ENTER` to play a file. Press `ENTER`, `ESC`, or `SPACE` to return to the list. Press `M`, `B`, 
-`S` or `T` to change the different settings.
+`S` or `T` to change settings. Press `Q` to exit the program.
+
+Run `ink-ansi-animation --help` to see available command-line options.
 
 ## Screenshots
 
-![Screenshot 1](./img/screenshot-1.jpg)
+![Screenshot 1](https://github.com/chung-leong/react-ansi-animation/raw/main/demo/ink/img/screenshot-1.jpg)
 
-![Screenshot 2](./img/screenshot-2.jpg)
+![Screenshot 2](https://github.com/chung-leong/react-ansi-animation/raw/main/demo/ink/img/screenshot-2.jpg)
