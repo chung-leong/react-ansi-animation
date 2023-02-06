@@ -9,7 +9,7 @@ import AnsiSlideShow from './AnsiSlideShow.jsx';
 import FileList from './FileList.jsx';
 
 export default async function* main(methods) {
-  const { wrap, throw404, manageRoute, manageEvents, replacing } = methods;
+  const { wrap, manageRoute, manageEvents, replacing } = methods;
   const [ parts ] = manageRoute();
   const [ on, eventual ] = manageEvents();
   wrap((children) => {
@@ -47,21 +47,18 @@ export default async function* main(methods) {
         parts.splice(0);
         parts.push('list', dirname(path), path);
       } else if (parts[0] === 'loop') {
-        try {
-          const paths = parts.slice(1);
-          yield <AnsiSlideShow srcList={paths} onExit={on.exit} />;
-          await eventual.exit;
-          process.exit(0);
-        } catch (err) {
-          console.error(err);
-          process.exit(1);
-        }
+        const paths = parts.slice(1);
+        yield <AnsiSlideShow srcList={paths} onExit={on.exit} />;
+        await eventual.exit;
+        process.exit(0);
       } else {
-        throw404();
+        throw new Error(`Unrecognized command: ${parts[0]}`);
       }
     } catch (err) {
-      yield <Text >{err.message}</Text>;
-      await eventual.exit;
+      // not sure why Ink complains when nothing is yielded prior to program exit
+      yield null;
+      console.error(err.message);      
+      process.exit(1);
     }
   }
 }

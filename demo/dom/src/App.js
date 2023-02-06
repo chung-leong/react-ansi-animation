@@ -7,7 +7,7 @@ export default function App() {
   const [ blinking, setBlinking ] = useState(false);
   const [ scrolling, setScrolling ] = useState(true);
   const [ canvas, setCanvas ] = useState(false);
-  const [ transparency, setTransparency ] = useState(true);
+  const [ transparency, setTransparency ] = useState(false);
   const [ filename, setFilename ] = useState('ABYSS1.ANS');
   const [ initialStatus, setInitialStatus ] = useState({ position: 0, playing: true });
   const [ currentStatus, setCurrentStatus ] = useState(initialStatus);
