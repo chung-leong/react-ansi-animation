@@ -10,22 +10,24 @@ React 18 and above.
 ```js
 import { AnsiText } from 'react-ansi-animation';
 
-export default function App() {
+export default function Widget() {
   return <AnsiText src="./test.ans" modemSpeed={9600} />;
 }
 ```
 
 ## Features
 
-* Embedded font support
-* Modem speed emulation
-* Blinking text
-* Animation playback ctronol
+* [Embedded font support](#customizing-text-appearance)
+* [Modem speed emulation](#modem-speed-emulation)
+* [Blinking text](#blinking-text)
+* [Animation playback control](#animation-playback-control)
+
+## Demo
 
 ## Components
 
-* [`<AnsiText />`](./docs/AnsiText.md)
-* [`<AnsiCanvas />`](./docs/AnsiCanvas.md)
+* [`<AnsiText>`](./docs/AnsiText.md)
+* [`<AnsiCanvas>`](./docs/AnsiCanvas.md)
 
 ## Hooks
 
@@ -33,28 +35,67 @@ export default function App() {
 
 ## Customizing text appearance
 
-AnsiText returns an HTML element with the following structure:
+[`<AnsiText>`](./docs/AnsiText.md) renders an HTML element with the following structure:
 
 ```html
-  <div className="AnsiText">
-    <code style="display: block; whiteSpace: pre; width: fit-content">
+  <code className="AnsiText" style="display: inline-block; whiteSpace: pre; width: fit-content">
+    <div>
       <span style="color: [color]; background-color: [color]">[ text ]</span>
       <span />
         ⋮
       <span />
-    </code>
-    <code />
+    </div>
+    <div />
       ⋮
-    <code />
-  </div>
+    <div />
+  </code>
 ```
 
-To change the font size, weight, and other attributes, simply add a rule to your CSS file:
+`<code>` employs the "monotype" font by default. To change the font size, weight, and other attributes, 
+simply add a rule to your CSS file:
 
 ```css
-div.AnsiText {
+.AnsiText {
+  font-family: 'Courier New', monotype;
   font-size: 24px;
   font-weight: bold;
 }
 ```
+
+You can change the font used by [`<AnsiCanvas>`](./docs/AnsiCanvas.md) in the same manner:
+
+```css
+.AnsiCanvas {
+  font-family: 'Courier New', monotype;
+  font-size: 24px;
+  font-weight: bold;
+}
+```
+
+Use a `@font-face` declaration if you wish to use a custom font:
+
+```css
+@font-face {
+  font-family: 'Flexi IBM VGA';
+  font-style: normal;
+  font-weight: normal;
+  src: url('/fonts/flexi-ibm-vga-true-437.woff2') format('woff2'),
+       url('/fonts/flexi-ibm-vga-true-437.woff') format('woff');
+}
+```
+
+You can change the color palette by providing the [`palette`](./docs/AnsiText.md#palette) prop. To define colors
+through CSS instead, set `palette` to `"css"`. See documentation for more details.
+
+## Modem speed emulation
+
+
+## Blinking text
+
+
+
+## Animation playback control
+
+
+## Acknowledgement
 
