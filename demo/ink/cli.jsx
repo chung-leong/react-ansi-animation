@@ -10,7 +10,7 @@ import { useSequential } from 'react-seq';
 import { useSequentialRouter } from 'array-router';
 import main from './main.jsx';
 
-const name = `ink-ansi`;
+const name = `ink-ansi-animation`;
 const commands = {
   'show [FILE]': { desc: `Show an ANSI animation` },
   'loop [FILE]...': { desc: `Show files in a loop` },
@@ -40,7 +40,7 @@ const flags = {
   },
 };
 
-const helpText = meowhelp({	name: `ink-ansi`,	flags, commands });
+const helpText = meowhelp({	name,	flags, commands });
 const options = { importMeta: import.meta, flags };
 const { input: parts, flags: query } = meow(helpText, options);
 
