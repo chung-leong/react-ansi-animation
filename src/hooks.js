@@ -28,7 +28,7 @@ export function useAnsi(dataSource, options = {}) {
       width: minWidth, 
       height: minHeight,
       blinked: false, 
-      lines: Array(minHeight).fill([ { text: ' '.repeat(minWidth), fgColor: 7, bgColor: 0, blink: false, transparent: true } ]),
+      lines: Array(minHeight).fill([ { text: ' '.repeat(minWidth), fgColor: undefined, bgColor: undefined, blinking, blink: false } ]),
       willBlink: false,
       status: initialStatus,
       metadata: null,
@@ -65,6 +65,7 @@ export function useAnsi(dataSource, options = {}) {
       let width = detectedWidth, height = detectedHeight;
       let cursorX = 0, cursorY = 0, savedCursorX = 0, savedCursorY = 0, maxCursorX = 0, maxCursorY = 0;
       let bgColor = 0, fgColor = 7, bgColorBase = 0, fgColorBase = 7, bgBright = false, fgBright = false;
+      let transparencyFlags = 0, bgSet = false, fgSet = false;
       let buffer = null, blinked = false, willBlink = false;
       let escapeSeq = null, eof = false, metadata = null, metaString = '';
       if (pass === 1) {
@@ -78,8 +79,9 @@ export function useAnsi(dataSource, options = {}) {
         // calculate the number of frames during which blinking text stays visible or invisible
         const blinkFrameCount = Math.ceil(blinkDuration / frameDuration);
         let blinkFramesRemaining = blinkFrameCount;
-        // create buffer, filling it with default text attribute
-        buffer = new Uint16Array(width * height);
+        // create buffer, using 32-bit integers when handling transparency
+        buffer = (transparency) ? new Uint32Array(width * height) : new Uint16Array(width * height);
+        // fill buffer with default attributes
         buffer.fill(cell(0));
         metadata = [];
         // process data in a multiple chunks 
@@ -110,7 +112,7 @@ export function useAnsi(dataSource, options = {}) {
           const playing = (index !== chunks.length - 1);
           const position = processed / chars.length;
           const status = { position, playing };
-          state = { width, height, blinked, lines, willBlink, status, metadata, error };
+          state = { width, height, blinking, blinked, lines, willBlink, status, metadata, error };
           if (!initialized) {
             // initialize with real contents
             initial(state);
@@ -150,7 +152,7 @@ export function useAnsi(dataSource, options = {}) {
      
       function cell(c) {
         // pack text attributes and codepoint into 16-bit cell
-        return (bgColor << 8) | (fgColor << 12) | c;
+        return (bgColor << 8) | (fgColor << 12) | c | transparencyFlags;
       }
 
       function setCharacter(c) {
@@ -400,6 +402,8 @@ export function useAnsi(dataSource, options = {}) {
               bgBright = false;
               fgColorBase = 7;
               bgColorBase = 0;
+              fgSet = false;
+              bgSet = false;
             } else if (m === 1) {
               fgBright = true;
             } else if (m === 2 || m === 22) {
@@ -410,18 +414,26 @@ export function useAnsi(dataSource, options = {}) {
               const fgColorBefore = fgColorBase;
               fgColorBase = bgColorBase;
               bgColorBase = fgColorBefore;
+              fgSet = true;
+              bgSet = true;
             } else if (m === 8) {
               fgColorBase = bgColorBase;
+              fgSet = true;
             } else if (m === 25) {
               bgBright = false;
             } else if (m >= 30 && m <= 37) {
               fgColorBase = m - 30;
+              fgSet = true;
             } else if (m >= 40 && m <= 47) {
               bgColorBase = m - 40;
+              bgSet = true;
             }
           }
           fgColor = fgColorBase + (fgBright ? 8 : 0);
           bgColor = bgColorBase + (bgBright ? 8 : 0);
+          if (transparency) {
+            transparencyFlags = (fgSet ? 0x00010000 : 0) | (bgSet ? 0x00020000 : 0);
+          }
         } else if (cmd === 's') {
           savedCursorX = cursorX;
           savedCursorY = cursorY;
@@ -436,7 +448,8 @@ export function useAnsi(dataSource, options = {}) {
         const blinkMask = (blinking) ? 0x0800 : 0x0000;
         const bgColorMask = (blinking) ? 0x0700 : 0x0F00;
         const fgColorMask = 0xF000;
-        const transparencyMask = (transparency) ? 0x0001 : 0x0000;
+        const fgMask = 0x00010000;
+        const bgMask = 0x00020000;
         for (let row = 0; row < height; row++) {
           const segments = [];
           const first = row * width;
@@ -446,8 +459,7 @@ export function useAnsi(dataSource, options = {}) {
           // find where there's a change in attributes
           for (let i = first; i < last; i++) {
             const cp = buffer[i] & 0x00FF;
-            // codepoint 0 means nothing was drawn there
-            const newAttr = (buffer[i] & 0xFF00) | (cp === 0 && transparencyMask);
+            const newAttr = buffer[i] & 0x000FFF00;
             if (attr !== newAttr) {
               // add preceding text
               if (text.length > 0) {
@@ -466,10 +478,9 @@ export function useAnsi(dataSource, options = {}) {
           const line = [];
           for (const { attr, text } of segments) {
             const blink = (attr & blinkMask) !== 0;
-            const transparent = (attr & transparencyMask) !== 0;
-            const bgColor = (attr & bgColorMask) >> 8;
-            const fgColor = (attr & fgColorMask) >> 12;
-            line.push({ text, fgColor, bgColor, blink, transparent });
+            const fgColor = (!transparency || (attr & fgMask)) ? (attr & fgColorMask) >> 12 : undefined;
+            const bgColor = (!transparency || (attr & bgMask)) ? (attr & bgColorMask) >> 8 : undefined;
+            line.push({ text, fgColor, bgColor, blink });
             willBlink = willBlink || blink;
           }
           lines.push(line);

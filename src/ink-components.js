@@ -11,9 +11,9 @@ export function AnsiText({ src, srcObject, palette = cgaPalette, ...options }) {
   const { lines, blinked } = useAnsi(data, options);
   // convert lines to Ink Text elements
   const children = lines.map((segments) => {
-    const spans = segments.map(({ text, fgColor, bgColor, blink, transparent }) => {
+    const spans = segments.map(({ text, fgColor, bgColor, blink }) => {
       const props = {
-        backgroundColor: (transparent) ? undefined : palette[bgColor],
+        backgroundColor: palette[bgColor],
         color: palette[(blink && blinked) ? bgColor : fgColor],
       };
       return createElement(Text, props, text);

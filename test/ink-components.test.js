@@ -14,9 +14,6 @@ describe('Ink components', function() {
       const el = createElement(AnsiText);
       const { lastFrame } = render(el);
       const s = lastFrame();
-      const t = s.replace(/\u001b\[.*?[@-~]/g, '');
-      expect(t).to.match(/^\s+$/);
-      expect(t).to.have.length.that.is.at.least(22 * 79);
       const m = s.match(/\n/g);
       expect(m).to.have.lengthOf(21);
     })

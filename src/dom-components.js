@@ -6,24 +6,26 @@ export function AnsiText({ src, srcObject, palette = cgaPalette, className = 'An
   // retrieve data if necessary
   const data = useMemo(() => srcObject ?? fetchBuffer(src), [ src, srcObject ]);
   // process data through hook
-  const { lines, blinked } = useAnsi(data, options);
+  const { lines, blinking, blinked } = useAnsi(data, options);
   // convert lines to spans
   const children = lines.map((segments) => {
-    const spans = segments.map(({ text, fgColor, bgColor, blink, transparent }) => {
+    const spans = segments.map(({ text, fgColor, bgColor, blink }) => {
       const props = {};
       if (Array.isArray(palette)) {
         props.style = {
-          backgroundColor: (transparent) ? undefined : palette[bgColor],
+          backgroundColor: palette[bgColor],
           color: palette[(blink && blinked) ? bgColor : fgColor],
         };
       } else {
         const names = [];
-        names.push(`fgColor${fgColor}`)
-        if (!transparent) {
+        if (fgColor !== undefined) {
+          names.push(`fgColor${fgColor}`)
+        }
+        if (bgColor !== undefined) {
           names.push(`bgColor${bgColor}`);
         }
         if (blink) {
-          if (options.blinking === true) {
+          if (blinking === true) {
             // manual blinking
             if (blink && blinked) {
               names.push('blink');
@@ -40,7 +42,7 @@ export function AnsiText({ src, srcObject, palette = cgaPalette, className = 'An
     return createElement('div', {}, ...spans);
   });
   const style = {
-    display: 'block',
+    display: 'inline-block',
     whiteSpace: 'pre', 
     width: 'fit-content',
   };
@@ -61,14 +63,15 @@ export function AnsiCanvas({ src, srcObject, palette = cgaPalette, className = '
       return;
     }
     // get font applicable to canvas
-    let specifier = getFontSpecifier(canvas);
-    if (document.fonts.check(specifier)) {
+    let { color, font } = getCanvasStyle(canvas);
+    if (document.fonts.check(font)) {
       draw();
       // observe resizing of element so any font changes get applied
       const observer = new ResizeObserver(() => {
-        const newSpecifier = getFontSpecifier(canvas);        
-        if (newSpecifier !== specifier) {
-          specifier = newSpecifier;
+        const { font: newFont, color: newColor } = getCanvasStyle(canvas);        
+        if (newFont !== font || newColor !== color) {
+          font = newFont;
+          color = newColor;
           draw();
         }
       });
@@ -77,7 +80,7 @@ export function AnsiCanvas({ src, srcObject, palette = cgaPalette, className = '
     } else {
       // draw when the font has been loaded
       let cancelled = false;
-      document.fonts.load(specifier).then(() => {
+      document.fonts.load(font).then(() => {
         if (!cancelled) {
           draw();
         }
@@ -86,26 +89,27 @@ export function AnsiCanvas({ src, srcObject, palette = cgaPalette, className = '
     }
 
     function draw() {
-      const { charWidth, charHeight, ascent } = getFontMetrics(specifier);
+      const { charWidth, charHeight, ascent } = getFontMetrics(font);
       canvas.width = width * charWidth;
       canvas.height = height * charHeight;
       const cxt = canvas.getContext('2d');
       cxt.clearRect(0, 0, canvas.width, canvas.height);
-      cxt.font = specifier;
+      cxt.font = font;
       let x = 0, y = ascent;
       for (const line of lines) {
-        for (const { text, bgColor, fgColor, blink, transparent } of line) {
+        for (const { text, bgColor, fgColor, blink } of line) {
           for (let i = 0; i < text.length; i++) {
-            if (!transparent) {
+            if (bgColor !== undefined) {
               // fill background with block character for more consistent appearance
               // if the full-block character doesn't quote fill the cell, then the gaps between
               // cells should appear everywhere
               cxt.fillStyle = palette[bgColor];
               cxt.fillText('\u2588', x, y);
-              if (!blink || !blinked) {
-                cxt.fillStyle = palette[fgColor];
-                cxt.fillText(text.charAt(i), x, y);
-              }
+            }
+            if (!blink || !blinked) {
+              // use black if foreground color isn't set
+              cxt.fillStyle = (fgColor !== undefined) ? palette[fgColor] : color;
+              cxt.fillText(text.charAt(i), x, y);
             }
             x += charWidth;
           }
@@ -118,9 +122,10 @@ export function AnsiCanvas({ src, srcObject, palette = cgaPalette, className = '
   return createElement('canvas', { ref: canvasRef, className });
 }
 
-function getFontSpecifier(node) {
-  const { fontStyle, fontWeight, fontSize, fontFamily } = getComputedStyle(node);
-  return `${fontStyle} ${fontWeight} ${fontSize} ${fontFamily}`; 
+function getCanvasStyle(node) {
+  const { fontStyle, fontWeight, fontSize, fontFamily, color } = getComputedStyle(node);
+  const font = `${fontStyle} ${fontWeight} ${fontSize} ${fontFamily}`; 
+  return { color, font };
 }
 
 const fontMetrics = {};

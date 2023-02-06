@@ -21,7 +21,7 @@ describe('DOM components', function() {
         for (const { children: line } of node.children) {
           const segment = line[0];
           expect(segment).to.have.property('type', 'span');
-          expect(segment.props.style).to.have.property('color', '#aaaaaa');
+          expect(segment.props.style).to.have.property('color', undefined);
           expect(segment.props.style).to.have.property('backgroundColor', undefined);
           const text = segment.children[0];
           expect(text).to.have.lengthOf(79);

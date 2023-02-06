@@ -254,7 +254,7 @@ describe('#useAnsi', function() {
       expect(outputs[0]).to.have.property('height', 22);
     });
   })
-  it('should omit background color from untouched segments when transparency is on', async function() {
+  it('should omit attributes when there is no explicit setting of colors and transparency is on', async function() {
     await withTestRenderer(async ({ render }) => {
       const steps = createSteps();
       const outputs = [];
@@ -275,10 +275,10 @@ describe('#useAnsi', function() {
       await steps[0];
       expect(outputs[0]).to.be.an('object');
       const line1 = outputs[0].lines[0];
-      expect(line1).to.have.lengthOf(2);
-      expect(line1[0].text).to.equal('This is a test');
-      expect(line1[0]).to.have.property('transparent', false);
-      expect(line1[1]).to.have.property('transparent', true);
+      expect(line1).to.have.lengthOf(1);
+      expect(line1[0].text).to.match(/^This is a test/);
+      expect(line1[0]).to.have.property('bgColor', undefined);
+      expect(line1[0]).to.have.property('fgColor', undefined);
     });
   })
   it('should skip first pass when dimensions are fixed', async function() {
