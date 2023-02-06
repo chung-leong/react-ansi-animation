@@ -14,7 +14,7 @@ export default function AnsiDisplay({ src, onExit, onEnd }) {
   const borderStyle = 'round';
   const borderColor = (isFocused) ? 'blue' : undefined;
   const flexDirection = 'column';
-  const maxHeight = (scrolling) ? 24 : 1024;
+  const maxHeight = (scrolling) ? 25 : 1024;
   const onStatus = (status) => {
     if (status.position === 1) {
       // played to 100%
