@@ -98,7 +98,7 @@ export function AnsiCanvas({ src, srcObject, palette = cgaPalette, className = '
           for (let i = 0; i < text.length; i++) {
             if (!transparent) {
               // fill background with block character for more consistent appearance
-              // if the block character doesn't quote fill the cell, then the gaps between
+              // if the full-block character doesn't quote fill the cell, then the gaps between
               // cells should appear everywhere
               cxt.fillStyle = palette[bgColor];
               cxt.fillText('\u2588', x, y);
@@ -132,10 +132,16 @@ function getFontMetrics(specifier) {
     const cxt = canvas.getContext('2d');
     cxt.font = specifier;
     const m = cxt.measureText('\u2588');
-    const ascent = m.fontBoundingBoxAscent;
-    const charHeight = m.fontBoundingBoxAscent + m.fontBoundingBoxDescent;
+    // support for fontBoundingBoxAscent and fontBoundingBoxDescent is spotty
+    // (https://developer.mozilla.org/en-US/docs/Web/API/TextMetrics#browser_compatibility)
+    // 
+    // actualBoundingBoxAscent and actualBoundingBoxDescent wouldn't yield the exactly result
+    // since the bounding box of the full-block character (U+2588) will likely stick out just a little
+    const ascent = m.fontBoundingBoxAscent ?? m.actualBoundingBoxAscent;
+    const descent = m.fontBoundingBoxDescent ?? m.actualBoundingBoxDescent;
     const charWidth = m.width;
-    metrics = fontMetrics[specifier] = { charWidth, charHeight, ascent };
+    const charHeight = ascent + descent;
+    metrics = fontMetrics[specifier] = { ascent, descent, charWidth, charHeight };
   }
   return metrics;
 }
