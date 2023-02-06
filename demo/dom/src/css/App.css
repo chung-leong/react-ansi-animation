@@ -41,6 +41,10 @@ body {
 
 .App .controls input[type="checkbox"] {
   margin-right: 0.5em;
+  width: 1.2em;
+  height: 1.2em;
+  vertical-align: middle;
+  accent-color: #666666;
 }
 
 .App .file-list h4:first-child {
@@ -87,11 +91,31 @@ body {
   width: 96%;
   margin-top: 1em;
   margin-bottom: 1em;
+  appearance: none;
+  height: 14px;
+  background: #666666;
+  outline: none;
+  transition: opacity .2s;  
+  border-radius: 2px;
+}
+
+.slider:hover {
+  opacity: 1; /* Fully shown on mouse-over */
+}
+
+.App .playback-controls input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 24px;
+  background: #EFEFEF;
+  border-radius: 2px;
+  cursor: pointer;
 }
 
 .App .playback-controls button {
   font-size: 1.5em;
   padding: 0.2em 0.4em 0.2em 0.5em;
+
 }
 
 .App .playback-controls.playing button {
