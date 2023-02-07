@@ -35,24 +35,9 @@ export default function Widget() {
 
 ## Customizing text appearance
 
-[`<AnsiText>`](./docs/AnsiText.md) renders an HTML element with the following structure:
-
-```html
-  <code className="AnsiText" style="display: inline-block; whiteSpace: pre; width: fit-content">
-    <div>
-      <span style="color: [color]; background-color: [color]">[ text ]</span>
-      <span />
-        ⋮
-      <span />
-    </div>
-    <div />
-      ⋮
-    <div />
-  </code>
-```
-
-`<code>` employs the "monotype" font by default. To change the font size, weight, and other attributes, 
-simply add a rule to your CSS file:
+[`<AnsiText>`](./docs/AnsiText.md) creates `<code>` HTML element, which employs the "monotype" font
+by default. It will have the `className` "AnsiText". To change the font size, weight, and other 
+attributes, simply add a rule to your CSS file:
 
 ```css
 .AnsiText {
