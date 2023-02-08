@@ -2,8 +2,17 @@
 
 React-ansi-animation is React library that provides a set of components for displaying ANSI art. 
 It can render either HTML text elements or into a canvas. It can also output text for 
-[Ink](https://github.com/vadimdemedes/ink)-based CLI applications. The library is designed for 
-React 18 and above.
+[Ink](https://github.com/vadimdemedes/ink)-based CLI applications. 
+
+The library was built with the help of 
+[React-seq](https://github.com/chung-leong/react-ansi-animation#readme). 
+It is designed for React 18 and above.
+
+## Installation
+
+```sh
+npm install --save-dev react-ansi-animation
+```
 
 ## Basic usage
 
@@ -22,7 +31,21 @@ export default function Widget() {
 * [Blinking text](#blinking-text)
 * [Animation playback control](#animation-playback-control)
 
-## Demo
+## Live demo
+
+You can see the both `<AnsiText>` and `<AnsiCanvas>` in action at https://chung-leong.github.io/react-ansi-animation/:
+
+![Screenshot](./doc/img/screenshot-1.jpg)
+
+The website is optimized for viewing on mobile devices as well.
+
+To see the Ink version of `<AnsiText>` in action, install 
+[ink-ansi-animation](https://www.npmjs.com/package/ink-ansi-animation) then run it from a directory that contains ANSI files:
+
+![Screenshot](./doc/img/screenshot-2.jpg)
+
+You can download the ANSI files used by the demo website [here](https://chung-leong.github.io/react-ansi-animation/). Check out the ANSI art archive [Sixteen Colors](https://16colo.rs/) if you 
+wish to see more glorious creations from years bygone.
 
 ## Components
 
