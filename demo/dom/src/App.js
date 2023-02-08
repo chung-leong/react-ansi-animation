@@ -13,7 +13,6 @@ export default function App() {
   const [ currentStatus, setCurrentStatus ] = useState(initialStatus);
   const Ansi = (canvas) ? AnsiCanvas : AnsiText;
   const maxHeight = (scrolling) ? 25 : 1024;
-  const frameDuration = 50;
 
   const onSpeedChange = ({ target }) => {
     setModemSpeed(parseFloat(target.value));
@@ -103,7 +102,7 @@ export default function App() {
         </label>
       </div>
       <div className="contents">
-        <Ansi src={`ansi/${filename}`} {...{ modemSpeed, blinking, transparency, maxHeight, frameDuration, initialStatus, onStatus }} />
+        <Ansi src={`ansi/${filename}`} {...{ modemSpeed, blinking, transparency, maxHeight, initialStatus, onStatus }} />
         <div className={`playback-controls ${currentStatus.playing ? 'playing' : 'paused'}`}>
           <input type="range" value={currentStatus.position} min="0" max="1" step="0.001" onChange={onPositionChange} />
           <button onClick={onPlayClick}>Play {'\u25b6'}</button>
