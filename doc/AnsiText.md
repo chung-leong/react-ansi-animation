@@ -69,7 +69,7 @@ Default: `56000`
 Duration of an animation frame in millisecond. A shorter duration means a smoother animation.
 
 Type: `<number>`  
-Default: `100`
+Default: `50`
 
 ### `blinkDuration`
 

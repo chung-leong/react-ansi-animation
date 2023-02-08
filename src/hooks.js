@@ -8,7 +8,7 @@ const promisedData = new WeakMap();
 export function useAnsi(dataSource, options = {}) {
   const {
     modemSpeed = 56000,
-    frameDuration = 100,
+    frameDuration = 50,
     blinkDuration = 500,    
     blinking = false,
     transparency = false,
