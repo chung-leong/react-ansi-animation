@@ -1,7 +1,7 @@
 # React-ansi-animation ![ci](https://img.shields.io/github/actions/workflow/status/chung-leong/react-ansi-animation/node.js.yml?branch=main&label=Node.js%20CI&logo=github) ![nycrc config on GitHub](https://img.shields.io/nycrc/chung-leong/react-ansi-animation)
 
-React-ansi-animation is React library that provides a set of components for displaying ANSI art. 
-It can render either HTML text elements or into a canvas. It can also output text for 
+React-ansi-animation provides a set of components for displaying ANSI art. It can render 
+either HTML text elements or into a canvas. It can also output text for 
 [Ink](https://github.com/vadimdemedes/ink)-based CLI applications. 
 
 The library was built with the help of 
@@ -49,16 +49,16 @@ wish to see more glorious creations from years bygone.
 
 ## Components
 
-* [`<AnsiText>`](./docs/AnsiText.md)
-* [`<AnsiCanvas>`](./docs/AnsiCanvas.md)
+* [`<AnsiText>`](./doc/AnsiText.md)
+* [`<AnsiCanvas>`](./doc/AnsiCanvas.md)
 
 ## Hooks
 
-* [`useAnsi`](./docs/useAnsi.md)
+* [`useAnsi`](./doc/useAnsi.md)
 
 ## Customizing text appearance
 
-[`<AnsiText>`](./docs/AnsiText.md) creates `<code>` HTML element, which employs the "monotype" font
+[`<AnsiText>`](./doc/AnsiText.md) creates `<code>` HTML element, which employs the "monotype" font
 by default. It will have the `className` "AnsiText". To change the font size, weight, and other 
 attributes, simply add a rule to your CSS file:
 
@@ -70,7 +70,7 @@ attributes, simply add a rule to your CSS file:
 }
 ```
 
-You can change the font used by [`<AnsiCanvas>`](./docs/AnsiCanvas.md) in the same manner:
+You can change the font used by [`<AnsiCanvas>`](./doc/AnsiCanvas.md) in the same manner:
 
 ```css
 .AnsiCanvas {
@@ -92,13 +92,13 @@ Use a `@font-face` declaration if you wish to use a custom font:
 }
 ```
 
-You can change the color palette by providing the [`palette`](./docs/AnsiText.md#palette) prop. To
-define colors through CSS instead, set `palette` to `"css"`. See documentation for more details.
+You can change the color palette by providing the [`palette`](./doc/AnsiText.md#palette) prop. To
+define colors through CSS instead, set `palette` to `"css"`.
 
 ## Modem speed emulation
 
-By default this library emulates a 56K modem. Set the [`modemSpeed`] prop to use a different speed.
-Use `Infinity` if you want the final picture to appear immediately.
+By default this library emulates a 56K modem. Set the [`modemSpeed`](./doc/AnsiText.md#modemspeed)
+prop to use a different speed. Use `Infinity` if you want the final picture to appear immediately.
 
 ## Blinking text
 
@@ -108,17 +108,17 @@ era sometimes depends on blinking for certain effects. ANSI arts created in late
 use the final bit for high-intensity background colors. They would look odd when viewed in CGA
 text mode.
 
-Blinking is disabled by default. Set the [`blinking`] prop to enable it.
+Blinking is disabled by default. Set the [`blinking`](./doc/AnsiText.md#blinking) prop to enable it.
 
 ## Animation playback control
 
-By providing an [`onStatus`](./AnsiText.md#onstatus) handler and altering the 
-[`initialStatus`](./AnsiText.md#initialstatus) prop, you can pause the animation or jump to 
-different points in time. [Code for the demo](./demo/dom/App.js) serves as a good working example.
+By providing an [`onStatus`](./doc/AnsiText.md#onstatus) handler and altering the 
+[`initialStatus`](./doc/AnsiText.md#initialstatus) prop, you can pause the animation or jump to 
+different points in time. [Code for the demo](./demo/dom/src/App.js#L1) serves as a good working example.
 
 ## Acknowledgement
 
 Special thanks to the maintainers of [ansi-bbs.org](http://www.ansi-bbs.org/) for providing a 
-detailed [ANSI specification](http://www.ansi-bbs.org/) and the maintainers of 
+detailed [ANSI specification](http://www.ansi-bbs.org/), and the maintainers of 
 [Sixteen Colors](https://16colo.rs/), the source of most of the ANSI arts used in the demo.
 
