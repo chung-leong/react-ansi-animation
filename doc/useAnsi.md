@@ -36,8 +36,8 @@ Hook for decoding text with ANSI escape sequences.
 * `width` - `<number>` The number of columns
 * `height` - `<number>` The number of rows
 * `lines` - `<Object[][]>` Objects describing text segments on each row
-* `blinking` - `<boolean>` or `<string>` 
-* `blinked` - `<boolean>` Whether blinking text should be invisible
+* `blinking` - `<boolean>` or `<string>` Value given in `options`
+* `blinked` - `<boolean>` Whether blinking text should be invisible at the current moment
 * `willBlink` - `<boolean>` Whether there are any blinking text segments
 * `status` - `{ position: <number>, playing: <boolean> }` Current status of animation
 * `metadata` - `<string[]>` Metadata stored at the end of file
@@ -54,9 +54,9 @@ the CGA colors
 ## Notes
 
 If `dataSource` is a promise, the hook will await it, returning in the meantime a blank
-screen. The result in will be cached in a WeakMap. When the hook encounters the same 
+screen. The result will be cached in a WeakMap. When the hook encounters the same 
 promise later, it'll obtain the result immediately.
 
-If `dataSource` is a string, it'll get converted into CP-437 (DOS) encoding. Characters 
+If `dataSource` is a string, it'll be converted into CP-437 (DOS) encoding. Characters 
 outside the codepage will appear as ?.
 

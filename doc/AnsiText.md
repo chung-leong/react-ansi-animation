@@ -7,7 +7,7 @@ React component that renders an ANSI animation as HTML text elements.
 ```js
   return (
     <div>
-      <AnsiText src="./ansi/hello-world.ansi" modemSpeed={2400} />
+      <AnsiText src="./ansi/hello-world.ans" modemSpeed={2400} />
     </div>
   );
 ```

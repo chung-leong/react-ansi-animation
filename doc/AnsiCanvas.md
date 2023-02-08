@@ -8,7 +8,7 @@ arbituary scaling is desired.
 ```js
   return (
     <div>
-      <AnsiCanvas src="./ansi/hello-world.ansi" modemSpeed={2400} />
+      <AnsiCanvas src="./ansi/hello-world.ans" modemSpeed={2400} />
     </div>
   );
 ```
@@ -19,5 +19,5 @@ arbituary scaling is desired.
 
 ## Notes
 
-You can change the font used to paint the text by defining a CSS rule for the class "AnsiCanvas". The 
-will update itself to reflect changes to its font style when there is a change in its size. 
+You can change the appearance of text in the canvas by defining a CSS rule for the class "AnsiCanvas". The component will update itself to reflect subsequent style change when there is a
+change in its size. 

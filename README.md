@@ -40,7 +40,7 @@ You can see the both `<AnsiText>` and `<AnsiCanvas>` in action at https://chung-
 The website is optimized for viewing on mobile devices as well.
 
 To see the Ink version of `<AnsiText>` in action, install 
-[ink-ansi-animation](https://www.npmjs.com/package/ink-ansi-animation) then run it from a directory that contains ANSI files:
+[ink-ansi-animation](https://www.npmjs.com/package/ink-ansi-animation) then run it from a directory containing ANSI files:
 
 ![Screenshot](./doc/img/screenshot-2.jpg)
 
@@ -58,7 +58,7 @@ wish to see more glorious creations from years bygone.
 
 ## Customizing text appearance
 
-[`<AnsiText>`](./doc/AnsiText.md) creates `<code>` HTML element, which employs the "monotype" font
+[`<AnsiText>`](./doc/AnsiText.md) creates a `<code>` HTML element, which employs the "monotype" font
 by default. It will have the `className` "AnsiText". To change the font size, weight, and other 
 attributes, simply add a rule to your CSS file:
 
