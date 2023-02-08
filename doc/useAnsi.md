@@ -1,5 +1,7 @@
 # useAnsi(dataSource, [options])
 
+Hook for decoding text with ANSI escape sequences. 
+
 ## Syntax
 
 ```js
@@ -41,4 +43,20 @@
 * `metadata` - `<string[]>` Metadata stored at the end of file
 * `error` - `<Error>` Data retrieval error
 
+## Text segment properties
+
+* `text` - `<string>` Text contained in the segment
+* `fgColor` - `<number>` A number between 0 and 15 representing one of the CGA colors
+* `bgColor` - `<number>` A number between 0 and 15 (or 7 if `blinking` is true) representing one of
+the CGA colors
+* `blink` - `<boolean>` Whether the text should blink
+
 ## Notes
+
+If `dataSource` is a promise, the hook will await it, returning in the meantime a blank
+screen. The result in will be cached in a WeakMap. When the hook encounters the same 
+promise later, it'll obtain the result immediately.
+
+If `dataSource` is a string, it'll get converted into CP-437 (DOS) encoding. Characters 
+outside the codepage will appear as ?.
+
