@@ -5,7 +5,7 @@ either HTML text elements or into a canvas. It can also output text for
 [Ink](https://github.com/vadimdemedes/ink)-based CLI applications. 
 
 The library was built with the help of 
-[React-seq](https://github.com/chung-leong/react-ansi-animation#readme). 
+[React-seq](https://github.com/chung-leong/react-seq#readme). 
 It is designed for React 18 and above.
 
 ## Installation
